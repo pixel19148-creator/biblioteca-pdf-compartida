@@ -19,7 +19,7 @@
         }
         /* Estilos para el Visor Modal */
         .modal {
-            display: none; /* Oculto por defecto */
+            display: none;
             position: fixed;
             z-index: 1000; 
             left: 0;
@@ -31,7 +31,7 @@
         }
         .modal-content {
             background-color: #fefefe;
-            margin: 5% auto; /* 5% desde arriba y centrado */
+            margin: 5% auto;
             padding: 20px;
             border-radius: 12px;
             width: 90%;
@@ -44,7 +44,7 @@
             flex-grow: 1;
             overflow: auto;
             display: flex;
-            justify-content: center; /* Centra horizontalmente el canvas */
+            justify-content: center;
         }
         #pdf-viewer {
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
@@ -55,7 +55,6 @@
     <!-- Carga del visor de PDF (CDN de Mozilla) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js"></script>
-
 </head>
 <body class="min-h-screen flex flex-col">
 
@@ -110,10 +109,20 @@
                 <canvas id="pdf-viewer"></canvas>
             </div>
             <!-- Controles del Visor -->
-            <div class="mt-4 flex justify-center items-center space-x-4">
-                <button id="prev-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300">Anterior</button>
-                <span id="page-info" class="font-medium text-gray-700">Página 0 de 0</span>
-                <button id="next-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300">Siguiente</button>
+            <div class="mt-4 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <!-- Sección de Navegación -->
+                <div class="flex space-x-4">
+                    <button id="prev-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300">Anterior</button>
+                    <span id="page-info" class="font-medium text-gray-700 self-center">Página 0 de 0</span>
+                    <button id="next-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300">Siguiente</button>
+                </div>
+                <!-- Sección de Descarga -->
+                <a id="download-link" href="#" target="_blank" download class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 11.586V4a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Descargar PDF
+                </a>
             </div>
         </div>
     </div>
@@ -133,12 +142,13 @@
         let pageNum = 1;
         let pageRendering = false;
         let pageNumPending = null;
-        const scale = 1.5; 
+        const scale = 2.5; // <-- ¡AUMENTAMOS ESTO PARA MEJOR CALIDAD!
         const canvas = document.getElementById('pdf-viewer');
         const ctx = canvas.getContext('2d');
         const pdfModal = document.getElementById('pdf-modal');
         const pdfTitle = document.getElementById('pdf-title');
         const pageInfo = document.getElementById('page-info');
+        const downloadLink = document.getElementById('download-link');
 
         /**
          * Renderiza la página actual.
@@ -150,8 +160,12 @@
                 // Cálculo de escala para que se ajuste al ancho del modal
                 const containerWidth = document.querySelector('.modal-content').clientWidth - 40; 
                 let adjustedScale = scale;
-                if (page.getViewport({ scale: 1 }).width > containerWidth) {
-                    adjustedScale = containerWidth / page.getViewport({ scale: 1 }).width;
+                
+                // Mantiene la calidad alta, pero ajusta la vista si es demasiado grande
+                const initialViewport = page.getViewport({ scale: 1 });
+                if (initialViewport.width * scale > containerWidth) {
+                    // Si la escala alta es más ancha que el contenedor, se ajusta al contenedor.
+                    adjustedScale = containerWidth / initialViewport.width;
                 }
                 
                 const viewport = page.getViewport({ scale: adjustedScale });
@@ -208,16 +222,17 @@
             pageInfo.textContent = 'Página 0 de 0';
             pdfModal.style.display = 'flex'; 
             
-            // La clave es usar la URL relativa aquí: "prueba.pdf"
-            const pdfUrl = url;
+            // Establece el enlace de descarga usando la URL del PDF
+            downloadLink.href = url;
+            downloadLink.setAttribute('download', title.replace(/[^a-z0-9]/gi, '_') + '.pdf'); // Nombre del archivo
 
-            pdfjsLib.getDocument(pdfUrl).promise.then(function(pdfDocument) {
+            pdfjsLib.getDocument(url).promise.then(function(pdfDocument) {
                 pdfDoc = pdfDocument;
                 pageNum = 1; 
                 pdfTitle.textContent = title; 
                 renderPage(pageNum);
             }).catch(function(error) {
-                pdfTitle.textContent = "Error al cargar el PDF. Verifica que '" + url + "' exista en la raíz.";
+                pdfTitle.textContent = "Error al cargar el PDF. Verifica la ruta: " + url;
                 console.error("Error al cargar el PDF: ", error);
             });
         }
@@ -259,3 +274,4 @@
     </script>
 </body>
 </html>
+
