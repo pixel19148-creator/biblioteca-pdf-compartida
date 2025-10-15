@@ -3,170 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biblioteca Compartida de PDF (Base de Datos)</title>
-    <!-- Tailwind CSS (Estilos) -->
+    <title>Matematik - Aprendizaje de Matemáticas</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f7f7f7;
-            min-height: 100vh;
+            background-color: #f7f9fb;
+        }
+        .card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .header-bg {
+            background: linear-gradient(90deg, #1e3a8a 0%, #1d4ed8 100%);
+        }
+        /* Estilos para el Visor Modal */
+        .modal {
+            display: none; /* Oculto por defecto */
+            position: fixed;
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; /* 5% desde arriba y centrado */
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1000px;
+            height: 90%;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            padding-top: 2rem;
         }
-        .pdf-viewer {
-            width: 100%;
-            height: 80vh; /* Ocupa el 80% de la altura de la vista */
-            max-width: 900px;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            margin-bottom: 2rem;
-            overflow: hidden;
+        .pdf-canvas-container {
+            flex-grow: 1;
+            overflow: auto;
+            display: flex;
+            justify-content: center; /* Centra horizontalmente el canvas */
         }
-        @media (max-width: 768px) {
-            .pdf-viewer {
-                height: 70vh;
-            }
+        #pdf-viewer {
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            max-width: 100%; 
+            height: auto;
         }
     </style>
+    <!-- Carga del visor de PDF (CDN de Mozilla) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js"></script>
+
 </head>
-<body>
+<body class="min-h-screen flex flex-col">
 
-    <!-- Contenedor Principal -->
-    <div class="max-w-4xl w-full p-4">
-
-        <!-- Título -->
-        <div class="bg-indigo-600 text-white p-6 rounded-t-xl shadow-lg mb-4 text-center">
-            <h1 class="text-3xl font-extrabold mb-1">
-                📚 Biblioteca Compartida de PDFs
-            </h1>
-            <p class="text-indigo-200">Usando Base de Datos en Tiempo Real (Firestore)</p>
+    <!-- Encabezado (Header) -->
+    <header class="header-bg text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-3xl font-bold tracking-tight">Matematik</h1>
+            <button id="login-button" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">
+                Iniciar Sesión
+            </button>
         </div>
+    </header>
 
-        <!-- Estado de Firebase (Sección de debug) -->
-        <div class="bg-white p-4 rounded-xl shadow-md mb-6">
-            <h2 class="text-lg font-semibold text-gray-700 mb-2">Estado de la Conexión</h2>
-            <div id="auth-status" class="text-sm p-2 rounded bg-indigo-100 text-indigo-700">Autenticación: Inicializando...</div>
-            <div id="user-id" class="text-sm p-2 mt-2 rounded bg-green-100 text-green-700">ID Usuario: Desconocido</div>
-        </div>
-
-        <!-- Cargador de PDF (Método Simple para prueba estática) -->
-        <div class="bg-yellow-50 p-4 rounded-xl shadow-md mb-6 border border-yellow-200">
-            <h2 class="text-xl font-bold text-yellow-800 mb-2">PDF de Prueba Estático</h2>
-            <p class="text-sm text-yellow-700">
-                **Ubicación:** <code class="bg-yellow-200 p-1 rounded font-mono text-xs">prueba.pdf</code>
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <section class="text-center mb-16">
+            <h2 class="text-5xl font-extrabold text-gray-900 mb-4">
+                El futuro del aprendizaje de matemáticas.
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                Diseñado para estudiantes que necesitan una ayuda extra y profesores que buscan herramientas modernas.
             </p>
-            <div id="pdf-message" class="mt-2 text-sm text-gray-600">
-                Cargando PDF...
+        </section>
+
+        <!-- Sección de Recursos de Estudio (Acceso a archivos locales) -->
+        <section class="bg-white p-8 rounded-xl card mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6">Recursos de Estudio</h2>
+            <p class="text-gray-600 mb-4">Solo hay un recurso de prueba, cargado desde la ruta **`prueba.pdf`**.</p>
+            <div id="content-list" class="space-y-4">
+                
+                <!-- RECURSO ÚNICO APUNTANDO A PRUEBA.PDF -->
+                <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center cursor-pointer hover:bg-blue-100 transition duration-150 view-pdf"
+                    data-pdf-url="prueba.pdf">
+                    <span class="font-medium text-blue-800">1. Documento de Prueba (prueba.pdf)</span>
+                    <span class="text-sm text-blue-600 font-semibold py-1 px-3 bg-blue-200 rounded-full">Abrir PDF</span>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal para el Visor de PDF -->
+    <div id="pdf-modal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-center pb-4 border-b border-gray-200">
+                <h3 id="pdf-title" class="text-xl font-bold text-gray-800">Cargando Documento...</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700 text-2xl font-bold transition duration-150">&times;</button>
+            </div>
+            <!-- Contenedor del PDF (Canvas) -->
+            <div class="pdf-canvas-container">
+                <canvas id="pdf-viewer"></canvas>
+            </div>
+            <!-- Controles del Visor -->
+            <div class="mt-4 flex justify-center items-center space-x-4">
+                <button id="prev-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300">Anterior</button>
+                <span id="page-info" class="font-medium text-gray-700">Página 0 de 0</span>
+                <button id="next-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300">Siguiente</button>
             </div>
         </div>
-
-        <!-- Visor de PDF -->
-        <div id="pdf-container" class="pdf-viewer">
-            <!-- El PDF.js cargará el iframe o el elemento aquí -->
-        </div>
-
     </div>
 
-    <!-- Firebase Imports -->
-    <script type="module">
-        // Importaciones de Firebase (Necesarias para la base de datos y autenticación)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        
-        // --- VARIABLES GLOBALES DEL ENTORNO (NO MODIFICAR) ---
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        
-        let app;
-        let auth;
-        let db;
-        let currentUserId = 'ID no disponible';
+    <!-- Pie de Página (Footer) -->
+    <footer class="bg-gray-800 text-white mt-12 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2024 Matematik. Todos los derechos reservados.</p>
+        </div>
+    </footer>
 
-        // Elementos del DOM
-        const authStatusEl = document.getElementById('auth-status');
-        const userIdEl = document.getElementById('user-id');
-        const pdfMessageEl = document.getElementById('pdf-message');
+    <script>
+        // Configuración de PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js';
 
-        // --- 1. Inicialización de Firebase ---
-        if (firebaseConfig) {
-            try {
-                // Inicializar la aplicación
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        const scale = 1.5; 
+        const canvas = document.getElementById('pdf-viewer');
+        const ctx = canvas.getContext('2d');
+        const pdfModal = document.getElementById('pdf-modal');
+        const pdfTitle = document.getElementById('pdf-title');
+        const pageInfo = document.getElementById('page-info');
 
-                authStatusEl.textContent = 'Autenticación: Inicializada.';
-                userIdEl.textContent = 'ID Usuario: Conectando...';
-            } catch (error) {
-                console.error("Error al inicializar Firebase:", error);
-                authStatusEl.textContent = `Error de Inicialización: ${error.message}`;
-            }
-        } else {
-            authStatusEl.textContent = 'Error: Configuración de Firebase no encontrada.';
+        /**
+         * Renderiza la página actual.
+         */
+        function renderPage(num) {
+            pageRendering = true;
+
+            pdfDoc.getPage(num).then(function(page) {
+                // Cálculo de escala para que se ajuste al ancho del modal
+                const containerWidth = document.querySelector('.modal-content').clientWidth - 40; 
+                let adjustedScale = scale;
+                if (page.getViewport({ scale: 1 }).width > containerWidth) {
+                    adjustedScale = containerWidth / page.getViewport({ scale: 1 }).width;
+                }
+                
+                const viewport = page.getViewport({ scale: adjustedScale });
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                const renderTask = page.render(renderContext);
+
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        queueRenderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+
+                pageInfo.textContent = 'Página ' + num + ' de ' + pdfDoc.numPages;
+            });
         }
 
-        // --- 2. Autenticación Anónima/Estable ---
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // Usuario autenticado (usaremos el token o el inicio de sesión anónimo)
-                currentUserId = user.uid;
-                authStatusEl.textContent = 'Autenticación: ✅ Conectado exitosamente.';
-                userIdEl.textContent = `ID Usuario (UID): ${currentUserId}`;
+        /**
+         * Si la página está en proceso de renderizado, espera.
+         */
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
             } else {
-                // Si no hay usuario, intenta iniciar sesión de forma anónima
-                signInAnonymously(auth)
-                    .then(() => {
-                        // El onAuthStateChanged se disparará de nuevo con el usuario anónimo
-                    })
-                    .catch((error) => {
-                        console.error("Error al iniciar sesión anónima:", error);
-                        authStatusEl.textContent = `Error de Autenticación: ${error.message}`;
-                        userIdEl.textContent = 'ID Usuario: No autenticado';
-                    });
+                renderPage(num);
+            }
+        }
+
+        // Eventos de Navegación del PDF
+        document.getElementById('prev-page').addEventListener('click', function() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        });
+
+        document.getElementById('next-page').addEventListener('click', function() {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        });
+
+        /**
+         * Abre y carga el PDF en el modal.
+         */
+        function openPdfViewer(url, title) {
+            pdfTitle.textContent = "Cargando: " + title + "...";
+            pageInfo.textContent = 'Página 0 de 0';
+            pdfModal.style.display = 'flex'; 
+            
+            // La clave es usar la URL relativa aquí: "prueba.pdf"
+            const pdfUrl = url;
+
+            pdfjsLib.getDocument(pdfUrl).promise.then(function(pdfDocument) {
+                pdfDoc = pdfDocument;
+                pageNum = 1; 
+                pdfTitle.textContent = title; 
+                renderPage(pageNum);
+            }).catch(function(error) {
+                pdfTitle.textContent = "Error al cargar el PDF. Verifica que '" + url + "' exista en la raíz.";
+                console.error("Error al cargar el PDF: ", error);
+            });
+        }
+
+        /**
+         * Cierra el modal.
+         */
+        document.getElementById('close-modal').addEventListener('click', function() {
+            pdfModal.style.display = 'none';
+        });
+
+        // Cierra el modal si se hace clic fuera de él
+        window.addEventListener('click', function(event) {
+            if (event.target === pdfModal) {
+                pdfModal.style.display = 'none';
             }
         });
 
 
-        // --- 3. Cargador de PDF (Función de prueba) ---
-        function loadPdfViewer(url) {
-            const pdfContainer = document.getElementById('pdf-container');
-            
-            // La URL ahora apunta a la RAÍZ donde tienes 'prueba.pdf'
-            const pdfUrl = url; 
+        // Configuración de los botones de recursos
+        document.addEventListener('DOMContentLoaded', () => {
+            const pdfLinks = document.querySelectorAll('.view-pdf');
 
-            // Esta es la URL del visor PDF.js alojado por Mozilla
-            const viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`;
+            pdfLinks.forEach(link => {
+                link.addEventListener('click', (event) => {
+                    const url = link.getAttribute('data-pdf-url');
+                    const titleElement = link.querySelector('.font-medium');
+                    const title = titleElement ? titleElement.textContent : 'Documento';
+                    
+                    openPdfViewer(url, title);
+                });
+            });
 
-            // Crear el iframe para cargar el visor
-            const iframe = document.createElement('iframe');
-            iframe.src = viewerUrl;
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-            iframe.style.border = 'none';
-            iframe.style.borderRadius = '0.75rem';
-
-            // Limpiar y añadir el iframe
-            pdfContainer.innerHTML = '';
-            pdfContainer.appendChild(iframe);
-
-            pdfMessageEl.innerHTML = `PDF cargado correctamente desde <code class="bg-yellow-200 p-1 rounded font-mono text-xs">${pdfUrl}</code>. ¡Revisa tu URL!`;
-        }
-
-        // Cargar el PDF de prueba
-        // Nota: Solo se carga el archivo estático de prueba para confirmar que GitHub Pages funciona.
-        // La lógica de Firestore vendrá después.
-        window.onload = () => {
-             // La URL del PDF estático, asumiendo que está en la RAÍZ (junto al index.html)
-            loadPdfViewer('prueba.pdf'); 
-        };
-
-        // TODO: En el siguiente paso, añadiremos la lógica de Firestore aquí para guardar y listar PDFs.
-
+            // Lógica para el botón de Iniciar Sesión (Estático)
+            document.getElementById('login-button').addEventListener('click', () => {
+                alert('¡Clic en Iniciar Sesión! (Funcionalidad estática)');
+            });
+        });
     </script>
 </body>
 </html>
