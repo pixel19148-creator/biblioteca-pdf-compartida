@@ -3,128 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lector de PDF de Prueba (GitHub Pages)</title>
+    <title>Biblioteca Compartida de PDF (Base de Datos)</title>
+    <!-- Tailwind CSS (Estilos) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Estilos específicos para este lector */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0d1117; /* Fondo oscuro de GitHub/Firebase */
-            color: #c9d1d9;
+            background-color: #f7f7f7;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
-            padding: 20px;
+            padding-top: 2rem;
         }
-
-        .container {
-            width: 100%;
-            max-width: 900px;
-            margin-top: 20px;
-            background-color: #161b22; /* Fondo de contenedores */
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-            padding: 20px;
-        }
-
         .pdf-viewer {
             width: 100%;
-            height: 80vh; /* Altura para el visualizador */
-            border-radius: 6px;
+            height: 80vh; /* Ocupa el 80% de la altura de la vista */
+            max-width: 900px;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
             overflow: hidden;
-            border: 1px solid #30363d;
         }
-
-        .message {
-            padding: 10px 15px;
-            margin-bottom: 20px;
-            border-radius: 6px;
-            font-weight: 600;
-        }
-
-        .success {
-            background-color: #22c55e;
-            color: #0a0e14;
-        }
-
-        .error {
-            background-color: #ef4444;
-            color: #ffffff;
+        @media (max-width: 768px) {
+            .pdf-viewer {
+                height: 70vh;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- Mensaje de estado -->
-    <div id="statusMessage" class="message success">
-        ¡Carga de prueba finalizada! Si no ve el PDF, revise la **URL y el nombre** del archivo.
-    </div>
+    <!-- Contenedor Principal -->
+    <div class="max-w-4xl w-full p-4">
 
-    <!-- Contenedor del PDF Viewer -->
-    <div class="container">
-        <h1 class="text-3xl font-bold text-center mb-4 text-blue-400">Biblioteca Compartida de PDFs (Método URL)</h1>
-        <p class="text-center mb-4 text-sm text-gray-400">
-            Método 100% gratuito: Guarda y comparte solo el enlace del PDF.
-        </p>
-
-        <!-- PDF Viewer -->
-        <div id="pdfViewer" class="pdf-viewer">
-            <!-- Aquí se cargará el PDF -->
+        <!-- Título -->
+        <div class="bg-indigo-600 text-white p-6 rounded-t-xl shadow-lg mb-4 text-center">
+            <h1 class="text-3xl font-extrabold mb-1">
+                📚 Biblioteca Compartida de PDFs
+            </h1>
+            <p class="text-indigo-200">Usando Base de Datos en Tiempo Real (Firestore)</p>
         </div>
+
+        <!-- Estado de Firebase (Sección de debug) -->
+        <div class="bg-white p-4 rounded-xl shadow-md mb-6">
+            <h2 class="text-lg font-semibold text-gray-700 mb-2">Estado de la Conexión</h2>
+            <div id="auth-status" class="text-sm p-2 rounded bg-indigo-100 text-indigo-700">Autenticación: Inicializando...</div>
+            <div id="user-id" class="text-sm p-2 mt-2 rounded bg-green-100 text-green-700">ID Usuario: Desconocido</div>
+        </div>
+
+        <!-- Cargador de PDF (Método Simple para prueba estática) -->
+        <div class="bg-yellow-50 p-4 rounded-xl shadow-md mb-6 border border-yellow-200">
+            <h2 class="text-xl font-bold text-yellow-800 mb-2">PDF de Prueba Estático</h2>
+            <p class="text-sm text-yellow-700">
+                **Ubicación:** <code class="bg-yellow-200 p-1 rounded font-mono text-xs">prueba.pdf</code>
+            </p>
+            <div id="pdf-message" class="mt-2 text-sm text-gray-600">
+                Cargando PDF...
+            </div>
+        </div>
+
+        <!-- Visor de PDF -->
+        <div id="pdf-container" class="pdf-viewer">
+            <!-- El PDF.js cargará el iframe o el elemento aquí -->
+        </div>
+
     </div>
 
-    <!-- Script de PDF.js y lógica -->
-    <script>
-        // Carga la librería PDF.js (necesario para el visualizador)
-        const pdfjsLib = window['pdfjs-dist/build/pdf'];
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    <!-- Firebase Imports -->
+    <script type="module">
+        // Importaciones de Firebase (Necesarias para la base de datos y autenticación)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- VARIABLES GLOBALES DEL ENTORNO (NO MODIFICAR) ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        let app;
+        let auth;
+        let db;
+        let currentUserId = 'ID no disponible';
 
-        // **************************************************************************************************************
-        // **************************************************************************************************************
-        // URL del PDF - ¡MODIFICADA AHORA DENTRO DE LA CARPETA pdfs/!
-        const pdfUrl = 'pdfs/prueba.pdf';
-        // **************************************************************************************************************
-        // **************************************************************************************************************
+        // Elementos del DOM
+        const authStatusEl = document.getElementById('auth-status');
+        const userIdEl = document.getElementById('user-id');
+        const pdfMessageEl = document.getElementById('pdf-message');
 
-        const container = document.getElementById('pdfViewer');
+        // --- 1. Inicialización de Firebase ---
+        if (firebaseConfig) {
+            try {
+                // Inicializar la aplicación
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
 
-        function renderPDF() {
-            pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
-                // Obtener la primera página para mostrarla
-                pdf.getPage(1).then(page => {
-                    const scale = 1.5;
-                    const viewport = page.getViewport({ scale: scale });
-
-                    // Crear el canvas para renderizar la página
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-
-                    container.innerHTML = '';
-                    container.appendChild(canvas);
-
-                    // Renderizar la página del PDF en el canvas
-                    const renderContext = {
-                        canvasContext: context,
-                        viewport: viewport
-                    };
-                    page.render(renderContext);
-
-                    document.getElementById('statusMessage').className = 'message success';
-                    document.getElementById('statusMessage').innerHTML = '¡PDF **' + pdfUrl + '** cargado con éxito!';
-                });
-            }).catch(error => {
-                console.error("Error al cargar el PDF:", error);
-                const errorMessage = document.getElementById('statusMessage');
-                errorMessage.className = 'message error';
-                errorMessage.innerHTML = 'Error al cargar el PDF. Revise que la ruta **' + pdfUrl + '** sea correcta y que el archivo esté subido.';
-            });
+                authStatusEl.textContent = 'Autenticación: Inicializada.';
+                userIdEl.textContent = 'ID Usuario: Conectando...';
+            } catch (error) {
+                console.error("Error al inicializar Firebase:", error);
+                authStatusEl.textContent = `Error de Inicialización: ${error.message}`;
+            }
+        } else {
+            authStatusEl.textContent = 'Error: Configuración de Firebase no encontrada.';
         }
 
-        renderPDF();
-    </script>
+        // --- 2. Autenticación Anónima/Estable ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Usuario autenticado (usaremos el token o el inicio de sesión anónimo)
+                currentUserId = user.uid;
+                authStatusEl.textContent = 'Autenticación: ✅ Conectado exitosamente.';
+                userIdEl.textContent = `ID Usuario (UID): ${currentUserId}`;
+            } else {
+                // Si no hay usuario, intenta iniciar sesión de forma anónima
+                signInAnonymously(auth)
+                    .then(() => {
+                        // El onAuthStateChanged se disparará de nuevo con el usuario anónimo
+                    })
+                    .catch((error) => {
+                        console.error("Error al iniciar sesión anónima:", error);
+                        authStatusEl.textContent = `Error de Autenticación: ${error.message}`;
+                        userIdEl.textContent = 'ID Usuario: No autenticado';
+                    });
+            }
+        });
 
+
+        // --- 3. Cargador de PDF (Función de prueba) ---
+        function loadPdfViewer(url) {
+            const pdfContainer = document.getElementById('pdf-container');
+            
+            // La URL ahora apunta a la RAÍZ donde tienes 'prueba.pdf'
+            const pdfUrl = url; 
+
+            // Esta es la URL del visor PDF.js alojado por Mozilla
+            const viewerUrl = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(pdfUrl)}`;
+
+            // Crear el iframe para cargar el visor
+            const iframe = document.createElement('iframe');
+            iframe.src = viewerUrl;
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.style.borderRadius = '0.75rem';
+
+            // Limpiar y añadir el iframe
+            pdfContainer.innerHTML = '';
+            pdfContainer.appendChild(iframe);
+
+            pdfMessageEl.innerHTML = `PDF cargado correctamente desde <code class="bg-yellow-200 p-1 rounded font-mono text-xs">${pdfUrl}</code>. ¡Revisa tu URL!`;
+        }
+
+        // Cargar el PDF de prueba
+        // Nota: Solo se carga el archivo estático de prueba para confirmar que GitHub Pages funciona.
+        // La lógica de Firestore vendrá después.
+        window.onload = () => {
+             // La URL del PDF estático, asumiendo que está en la RAÍZ (junto al index.html)
+            loadPdfViewer('prueba.pdf'); 
+        };
+
+        // TODO: En el siguiente paso, añadiremos la lógica de Firestore aquí para guardar y listar PDFs.
+
+    </script>
 </body>
 </html>
