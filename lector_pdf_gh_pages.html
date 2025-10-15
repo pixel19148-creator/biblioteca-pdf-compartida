@@ -15,81 +15,116 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            padding: 20px;
         }
+
         .container {
-            width: 95%;
-            max-width: 1200px;
-            margin-top: 2rem;
-            padding: 1rem;
-            background-color: #161b22;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            text-align: center;
-        }
-        iframe {
             width: 100%;
-            height: 80vh; /* Altura suficiente para ver el documento */
-            border: 1px solid #30363d;
+            max-width: 900px;
+            margin-top: 20px;
+            background-color: #161b22; /* Fondo de contenedores */
             border-radius: 8px;
-            margin-top: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            padding: 20px;
+        }
+
+        .pdf-viewer {
+            width: 100%;
+            height: 80vh; /* Altura para el visualizador */
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid #30363d;
+        }
+
+        .message {
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        .success {
+            background-color: #22c55e;
+            color: #0a0e14;
+        }
+
+        .error {
+            background-color: #ef4444;
+            color: #ffffff;
         }
     </style>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        'primary': '#58a6ff', /* Color azul de enlace de GitHub */
-                        'secondary': '#21262d',
-                    }
-                }
-            }
-        }
-    </script>
 </head>
 <body>
-    <div class="container">
-        <h1 class="text-3xl font-bold mb-2 text-primary">Biblioteca de Prueba para GitHub Pages</h1>
-        <p class="text-sm mb-4">
-            Este es un lector de prueba simple que solo intenta cargar el archivo **pdfs/prueba.pdf** desde la raíz de su repositorio.
-        </p>
 
-        <div id="status-message" class="p-3 my-4 bg-yellow-600/30 text-yellow-300 rounded-lg shadow-inner">
-            Intentando cargar: **pdfs/prueba.pdf**
-        </div>
-
-        <!-- El Iframe es la "ventana" donde se mostrará el PDF -->
-        <iframe id="pdf-viewer" title="Visor de Documento PDF">
-            Tu navegador no soporta iframes.
-        </iframe>
+    <!-- Mensaje de estado -->
+    <div id="statusMessage" class="message success">
+        ¡Carga de prueba finalizada! Si no ve el PDF, revise la **URL y el nombre** del archivo.
     </div>
 
+    <!-- Contenedor del PDF Viewer -->
+    <div class="container">
+        <h1 class="text-3xl font-bold text-center mb-4 text-blue-400">Biblioteca Compartida de PDFs (Método URL)</h1>
+        <p class="text-center mb-4 text-sm text-gray-400">
+            Método 100% gratuito: Guarda y comparte solo el enlace del PDF.
+        </p>
+
+        <!-- PDF Viewer -->
+        <div id="pdfViewer" class="pdf-viewer">
+            <!-- Aquí se cargará el PDF -->
+        </div>
+    </div>
+
+    <!-- Script de PDF.js y lógica -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const pdfViewer = document.getElementById('pdf-viewer');
-            const statusMessage = document.getElementById('status-message');
+        // Carga la librería PDF.js (necesario para el visualizador)
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-            // 1. Definimos la RUTA (path) del archivo PDF.
-            // La ruta es relativa a este archivo HTML.
-            // Debe existir un archivo llamado 'prueba.pdf' dentro de una carpeta llamada 'pdfs'.
-            const pdfRelativePath = 'pdfs/prueba.pdf';
+        // **************************************************************************************************************
+        // **************************************************************************************************************
+        // URL del PDF - ¡MODIFICADA AHORA DENTRO DE LA CARPETA pdfs/!
+        const pdfUrl = 'pdfs/prueba.pdf';
+        // **************************************************************************************************************
+        // **************************************************************************************************************
 
-            // 2. Cargamos el PDF en el iframe
-            pdfViewer.src = pdfRelativePath;
-            
-            // 3. Añadimos un pequeño mensaje de estado (opcional, pero útil)
-            pdfViewer.onload = function() {
-                // Verificar si la carga fue exitosa (aunque en iframes esto es complejo de detectar)
-                statusMessage.className = 'p-3 my-4 bg-green-600/30 text-green-300 rounded-lg shadow-inner';
-                statusMessage.innerHTML = '¡Carga de prueba finalizada! Si no ve el PDF, revise la **URL y el nombre** del archivo.';
-            };
+        const container = document.getElementById('pdfViewer');
 
-            // 4. Si hay un error, lo mostramos
-            pdfViewer.onerror = function() {
-                statusMessage.className = 'p-3 my-4 bg-red-600/30 text-red-300 rounded-lg shadow-inner';
-                statusMessage.innerHTML = 'Error al cargar el PDF. Verifique que la ruta `' + pdfRelativePath + '` sea correcta y que el archivo exista.';
-            };
-        });
+        function renderPDF() {
+            pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+                // Obtener la primera página para mostrarla
+                pdf.getPage(1).then(page => {
+                    const scale = 1.5;
+                    const viewport = page.getViewport({ scale: scale });
+
+                    // Crear el canvas para renderizar la página
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    container.innerHTML = '';
+                    container.appendChild(canvas);
+
+                    // Renderizar la página del PDF en el canvas
+                    const renderContext = {
+                        canvasContext: context,
+                        viewport: viewport
+                    };
+                    page.render(renderContext);
+
+                    document.getElementById('statusMessage').className = 'message success';
+                    document.getElementById('statusMessage').innerHTML = '¡PDF **' + pdfUrl + '** cargado con éxito!';
+                });
+            }).catch(error => {
+                console.error("Error al cargar el PDF:", error);
+                const errorMessage = document.getElementById('statusMessage');
+                errorMessage.className = 'message error';
+                errorMessage.innerHTML = 'Error al cargar el PDF. Revise que la ruta **' + pdfUrl + '** sea correcta y que el archivo esté subido.';
+            });
+        }
+
+        renderPDF();
     </script>
+
 </body>
 </html>
