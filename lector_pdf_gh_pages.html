@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lector de PDF de Prueba (GitHub Pages)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos específicos para este lector */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Fondo oscuro de GitHub/Firebase */
+            color: #c9d1d9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 95%;
+            max-width: 1200px;
+            margin-top: 2rem;
+            padding: 1rem;
+            background-color: #161b22;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        iframe {
+            width: 100%;
+            height: 80vh; /* Altura suficiente para ver el documento */
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#58a6ff', /* Color azul de enlace de GitHub */
+                        'secondary': '#21262d',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold mb-2 text-primary">Biblioteca de Prueba para GitHub Pages</h1>
+        <p class="text-sm mb-4">
+            Este es un lector de prueba simple que solo intenta cargar el archivo **pdfs/prueba.pdf** desde la raíz de su repositorio.
+        </p>
+
+        <div id="status-message" class="p-3 my-4 bg-yellow-600/30 text-yellow-300 rounded-lg shadow-inner">
+            Intentando cargar: **pdfs/prueba.pdf**
+        </div>
+
+        <!-- El Iframe es la "ventana" donde se mostrará el PDF -->
+        <iframe id="pdf-viewer" title="Visor de Documento PDF">
+            Tu navegador no soporta iframes.
+        </iframe>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const pdfViewer = document.getElementById('pdf-viewer');
+            const statusMessage = document.getElementById('status-message');
+
+            // 1. Definimos la RUTA (path) del archivo PDF.
+            // La ruta es relativa a este archivo HTML.
+            // Debe existir un archivo llamado 'prueba.pdf' dentro de una carpeta llamada 'pdfs'.
+            const pdfRelativePath = 'pdfs/prueba.pdf';
+
+            // 2. Cargamos el PDF en el iframe
+            pdfViewer.src = pdfRelativePath;
+            
+            // 3. Añadimos un pequeño mensaje de estado (opcional, pero útil)
+            pdfViewer.onload = function() {
+                // Verificar si la carga fue exitosa (aunque en iframes esto es complejo de detectar)
+                statusMessage.className = 'p-3 my-4 bg-green-600/30 text-green-300 rounded-lg shadow-inner';
+                statusMessage.innerHTML = '¡Carga de prueba finalizada! Si no ve el PDF, revise la **URL y el nombre** del archivo.';
+            };
+
+            // 4. Si hay un error, lo mostramos
+            pdfViewer.onerror = function() {
+                statusMessage.className = 'p-3 my-4 bg-red-600/30 text-red-300 rounded-lg shadow-inner';
+                statusMessage.innerHTML = 'Error al cargar el PDF. Verifique que la ruta `' + pdfRelativePath + '` sea correcta y que el archivo exista.';
+            };
+        });
+    </script>
+</body>
+</html>
