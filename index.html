@@ -1,392 +1,275 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { 
-    getFirestore, collection, onSnapshot, doc, addDoc, 
-    query, serverTimestamp, setLogLevel 
-} from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domifrenos - Expertos en Frenos y Cloches</title>
+    <!-- Inclusi贸n de Tailwind CSS para un dise帽o moderno y adaptable --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inclusi贸n de la fuente Inter de Google Fonts para una mejor legibilidad --><link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Estilo personalizado para usar la fuente Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Peque帽o efecto de scroll suave para la navegaci贸n interna */
+        html {
+            scroll-behavior: smooth;
+        }
+        /* Animaci贸n para el indicador de carga */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ef4444;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
 
-// Configuraci車n de la librer赤a pdf.js
-const pdfjsLib = window['pdfjs-dist/build/pdf'];
-// Configura la ruta del worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
+    <!-- Barra de Navegaci贸n --><header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-red-600">Domifrenos</h1>
+            <div class="hidden md:flex space-x-6 items-center">
+                <a href="#inicio" class="text-gray-600 hover:text-red-600 transition duration-300">Inicio</a>
+                <a href="#frenos" class="text-gray-600 hover:text-red-600 transition duration-300">Frenos</a>
+                <a href="#cloches" class="text-gray-600 hover:text-red-600 transition duration-300">Cloches</a>
+                <a href="#diagnostico-ia" class="text-gray-600 hover:text-red-600 transition duration-300">Asistente IA</a>
+                <a href="#contacto" class="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition duration-300">Contacto</a>
+            </div>
+            <!-- Men煤 para m贸viles --><div class="md:hidden">
+                 <a href="#contacto" class="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition duration-300">Contacto</a>
+            </div>
+        </nav>
+    </header>
 
-const App = () => {
-    const [db, setDb] = useState(null);
-    const [storage, setStorage] = useState(null); // Nuevo estado para Firebase Storage
-    const [userId, setUserId] = useState(null);
-    const [loadingState, setLoadingState] = useState('Inicializando conexi車n...');
-    const [isInitialized, setIsInitialized] = useState(false);
-    const [pdfDocuments, setPdfDocuments] = useState([]);
-    const [uploadStatus, setUploadStatus] = useState([]); 
-    
-    // Estado del visor de PDF
-    const [pdfDocInstance, setPdfDocInstance] = useState(null);
-    const [pageNum, setPageNum] = useState(1);
-    const [numPages, setNumPages] = useState(1);
-    const [renderPending, setRenderPending] = useState(null);
-    const [pdfFileName, setPdfFileName] = useState('Selecciona un documento');
+    <!-- Contenido Principal --><main>
 
-    // Referencias DOM
-    const canvasRef = useRef(null);
-    const fileInputRef = useRef(null);
+        <!-- Secci贸n de Inicio (Hero) --><section id="inicio" class="bg-gray-900 text-white text-center py-20 md:py-32">
+            <div class="container mx-auto px-6">
+                <h2 class="text-4xl md:text-5xl font-bold mb-4">Tu Seguridad es Nuestra Prioridad</h2>
+                <p class="text-lg md:text-xl mb-8 text-gray-300 max-w-3xl mx-auto">En Domifrenos, somos especialistas en el mantenimiento y reparaci贸n de sistemas de frenos y cloches. Viaja tranquilo, nosotros nos encargamos del resto.</p>
+                <a href="#contacto" class="bg-red-600 text-white px-8 py-3 rounded-full font-bold hover:bg-red-700 transition duration-300 text-lg">Agenda tu Revisi贸n</a>
+            </div>
+        </section>
 
-    // Variables de configuraci車n global
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        <!-- Secci贸n de Asesor铆a sobre Frenos --><section id="frenos" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl md:text-4xl font-bold text-gray-900">Todo sobre el Sistema de Frenos</h3>
+                    <p class="text-gray-600 mt-2 max-w-2xl mx-auto">El sistema de frenos es el componente de seguridad m谩s importante de tu veh铆culo. Aprende a identificar cu谩ndo necesita atenci贸n.</p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <!-- IMAGEN FIABLE DE DISCO DE FRENO (Placeholder estilizado en ROJO) -->
+                        <img src="https://placehold.co/600x400/991B1B/FFFFFF?text=DISCO+DE+FRENO%0A(Componente+Principal)" alt="Representaci贸n de un disco de freno" class="rounded-lg shadow-lg w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h4 class="text-2xl font-semibold mb-4">Se帽ales de que tus frenos necesitan una revisi贸n:</h4>
+                        <ul class="space-y-4">
+                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">1</span><div><h5 class="font-bold">Ruidos agudos o chirridos</h5><p class="text-gray-600">Si escuchas un chillido al frenar, podr铆a ser el indicador de desgaste de las pastillas de freno.</p></div></li>
+                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">2</span><div><h5 class="font-bold">Vibraciones en el pedal o volante</h5><p class="text-gray-600">Vibraciones al frenar pueden indicar que los discos de freno (rotores) est谩n deformados.</p></div></li>
+                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">3</span><div><h5 class="font-bold">Pedal de freno blando o esponjoso</h5><p class="text-gray-600">Si sientes que el pedal se va hasta el fondo, podr铆a haber aire o una fuga en el sistema hidr谩ulico.</p></div></li>
+                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">4</span><div><h5 class="font-bold">El veh铆culo se va hacia un lado</h5><p class="text-gray-600">Si al frenar el auto tiende a irse hacia la izquierda o derecha, puede ser un problema en las pinzas (c谩lipers) o las mangueras.</p></div></li>
+                        </ul>
+                        <p class="mt-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-r-lg"><span class="font-bold">Nuestro consejo:</span> No ignores estas se帽ales. Una revisi贸n a tiempo puede evitar reparaciones costosas y, lo m谩s importante, garantizar tu seguridad en el camino.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    // --- 1. Inicializaci車n de Firebase (DB y Storage) ---
-    useEffect(() => {
-        try {
-            if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
-                setLoadingState('Error: Configuraci車n de Firebase no disponible o incompleta.');
-                setIsInitialized(true);
+        <!-- Secci贸n de Asesor铆a sobre Cloches --><section id="cloches" class="py-16 md:py-24 bg-gray-50">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h3 class="text-3xl md:text-4xl font-bold text-gray-900">Sistema de Embrague (Clutch)</h3>
+                    <p class="text-gray-600 mt-2 max-w-2xl mx-auto">El sistema de embrague es crucial para una transmisi贸n de potencia suave. Nos especializamos en su mantenimiento y reparaci贸n para asegurar un funcionamiento 贸ptimo.</p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div class="order-2 md:order-1">
+                        <h4 class="text-2xl font-semibold mb-4">S铆ntomas de Falla en el Sistema:</h4>
+                        <ul class="space-y-4">
+                            <!-- ANTES #2, AHORA #1 -->
+                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">1</span><div><h5 class="font-bold">Dificultad para meter las marchas</h5><p class="text-gray-600">Si los cambios no entran suavemente, es un signo cl谩sico de que el sistema hidr谩ulico no est谩 desembragando correctamente.</p></div></li>
+                            <!-- ANTES #3, AHORA #2 -->
+                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">2</span><div><h5 class="font-bold">Pedal del clutch duro, muy suave o se queda pegado</h5><p class="text-gray-600">Cambios en la sensaci贸n del pedal casi siempre apuntan a fallas en la bomba o el bomb铆n del clutch.</p></div></li>
+                            <!-- ANTES #4, AHORA #3 -->
+                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">3</span><div><h5 class="font-bold">Fugas de l铆quido</h5><p class="text-gray-600">Si notas l铆quido de frenos cerca del pedal o debajo de la transmisi贸n, es una se帽al de fuga en el sistema hidr谩ulico.</p></div></li>
+                        </ul>
+                        
+                        <div class="mt-6 bg-gray-200 border-l-4 border-gray-500 p-4 rounded-r-lg">
+                            <h5 class="font-bold text-gray-800">Servicio Adicional: Prensa Hidr谩ulica</h5>
+                            <p class="text-gray-600">Contamos con servicio de prensa para el montaje y desmontaje de rodamientos, bujes y otros componentes que requieren alta precisi贸n y fuerza.</p>
+                        </div>
+
+                        <p class="mt-6 bg-blue-100 border-l-4 border-blue-500 text-blue-800 p-4 rounded-r-lg"><span class="font-bold">Nuestro consejo:</span> No ignores un pedal que cambia de sensaci贸n. Una revisi贸n a tiempo del sistema hidr谩ulico puede evitar que te quedes varado y previene da帽os mayores en la transmisi贸n.</p>
+                    </div>
+                    <div class="order-1 md:order-2">
+                        <!-- IMAGEN FIABLE DE SISTEMA DE EMBRAGUE (Placeholder estilizado en AZUL) -->
+                        <img src="https://placehold.co/600x400/1D4ED8/FFFFFF?text=SISTEMA+DE+EMBRAGUE%0A(Kit+Hidr%C3%A1ulico)" alt="Representaci贸n del sistema de embrague hidr谩ulico" class="rounded-lg shadow-lg w-full h-full object-cover">
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- ======================================================= --><!-- ===== NUEVA SECCI脫N: ASISTENTE DE DIAGN脫STICO IA ===== --><!-- ======================================================= --><section id="diagnostico-ia" class="py-16 md:py-24 bg-white">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12 max-w-3xl mx-auto">
+                    <h3 class="text-3xl md:text-4xl font-bold text-gray-900">Asistente de Diagn贸stico IA</h3>
+                    <p class="text-gray-600 mt-2">驴Tu auto hace un ruido extra帽o? 驴Sientes algo raro al frenar? Describe el problema y nuestra IA te dar谩 una orientaci贸n sobre las posibles causas.</p>
+                </div>
+
+                <div class="max-w-2xl mx-auto bg-gray-50 p-8 rounded-lg shadow-md border border-gray-200">
+                    <div class="mb-4">
+                        <label for="problem-description" class="block text-lg font-semibold mb-2 text-gray-700">Describe el problema de tu veh铆culo:</label>
+                        <textarea id="problem-description" rows="5" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition" placeholder="Ej: 'Cuando freno a baja velocidad, se escucha un chillido agudo que viene de las ruedas delanteras.'"></textarea>
+                    </div>
+                    
+                    <button id="analyze-button" class="w-full bg-red-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-red-700 transition duration-300 text-lg flex items-center justify-center gap-2">
+                        <span>鉁�</span> Analizar Problema con IA
+                    </button>
+
+                    <div id="ai-result" class="mt-8 p-6 bg-white rounded-lg border border-gray-200 min-h-[100px]">
+                        <p class="text-gray-500 text-center">El an谩lisis de nuestro asistente IA aparecer谩 aqu铆...</p>
+                    </div>
+
+                    <p class="text-xs text-gray-500 mt-4 text-center">
+                        <strong>Importante:</strong> Este asistente es una herramienta de orientaci贸n y no reemplaza el diagn贸stico de un mec谩nico profesional. Te recomendamos agendar una cita en Domifrenos para una revisi贸n completa.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Secci贸n de Contacto --><section id="contacto" class="py-16 md:py-24 bg-gray-900 text-white">
+            <div class="container mx-auto px-6 text-center">
+                 <h3 class="text-3xl md:text-4xl font-bold">Cont谩ctanos y Agenda tu Cita</h3>
+                 <p class="text-gray-300 mt-2 mb-10 max-w-2xl mx-auto">驴Tienes dudas o identificaste alguna de las se帽ales anteriores? 隆No esperes m谩s! Estamos aqu铆 para ayudarte.</p>
+                 <div class="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-12">
+                    <div class="bg-gray-800 p-8 rounded-lg shadow-lg text-left max-w-sm">
+                        <h4 class="text-2xl font-bold mb-4">Informaci贸n de Contacto</h4>
+                        <div class="space-y-4 text-gray-300">
+                            <p class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg><span>carrera 4 #40d-212 Apto 01</span></p>
+                            <p class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg><span>3148140930</span></p>
+                            <p class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg><span>jonatanpestana009@gmail.com</span></p>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-1/2 lg:w-1/3">
+                       <div class="bg-gray-700 rounded-lg shadow-lg overflow-hidden">
+                           <!-- IFRAME ACTUALIZADO CON LA DIRECCI脫N ESPEC脥FICA -->
+                           <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3920.895315183307!2d-75.3941566851996!3d9.30472299330896!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e591451b6210f63%3A0xb338e55e5f30e620!2sCarrera%204%20%2340d-212%20Apto%2001%2C%20Sincelejo%2C%20Sucre!5e0!3m2!1ses!2sco!4v1716900403616!5m2!1ses!2sco" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                       </div>
+                    </div>
+                 </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Pie de P谩gina --><footer class="bg-gray-800 text-white py-6">
+        <div class="container mx-auto px-6 text-center text-gray-400">
+            <p>&copy; 2025 Domifrenos. Todos los derechos reservados.</p>
+            <p class="text-sm mt-1">Dise帽ado para la seguridad y confianza de nuestros clientes.</p>
+        </div>
+    </footer>
+
+    <script>
+        const analyzeButton = document.getElementById('analyze-button');
+        const problemDescription = document.getElementById('problem-description');
+        const aiResultContainer = document.getElementById('ai-result');
+
+        // Funci贸n para realizar la llamada a la API con reintentos y "exponential backoff"
+        async function fetchWithBackoff(url, options, retries = 4, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) {
+                        return response;
+                    }
+                    // No reintentar en errores del cliente (ej. 400 Bad Request), ya que el problema es la solicitud.
+                    if (response.status >= 400 && response.status < 500) {
+                        throw new Error(`Error en la API: ${response.statusText}`);
+                    }
+                    // Reintentar solo en errores del servidor (5xx) o de red.
+                    // No se loguea en la consola del usuario para no causar alarma.
+                } catch (error) {
+                    // Error de red, se reintentar谩.
+                }
+                // Esperar antes del siguiente reintento, duplicando el tiempo de espera cada vez.
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay *= 2;
+            }
+            throw new Error('No se pudo conectar con el servidor de IA despu茅s de varios intentos.');
+        }
+
+
+        analyzeButton.addEventListener('click', async () => {
+            const userQuery = problemDescription.value.trim();
+
+            if (!userQuery) {
+                aiResultContainer.innerHTML = '<p class="text-yellow-600 text-center">Por favor, describe el problema de tu veh铆culo antes de analizar.</p>';
                 return;
             }
-            
-            setLogLevel('debug');
-            const app = initializeApp(firebaseConfig);
-            const firestore = getFirestore(app);
-            const firebaseStorage = getStorage(app); // Inicializa Storage
-            const firebaseAuth = getAuth(app);
 
-            setDb(firestore);
-            setStorage(firebaseStorage);
-            
-            const attemptSignIn = async () => {
-                try {
-                    if (initialAuthToken) {
-                        await signInWithCustomToken(firebaseAuth, initialAuthToken);
-                    } else {
-                        await signInAnonymously(firebaseAuth);
-                    }
-                } catch (error) {
-                    console.error("Error signing in:", error);
-                    setLoadingState('Error de autenticaci車n: ' + error.message);
-                }
-            };
-            attemptSignIn();
+            // Mostrar indicador de carga y deshabilitar el bot贸n
+            aiResultContainer.innerHTML = '<div class="flex justify-center items-center"><div class="loader"></div></div>';
+            analyzeButton.disabled = true;
+            analyzeButton.classList.add('opacity-50', 'cursor-not-allowed');
 
-            const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
-                if (user) {
-                    setUserId(user.uid);
-                    setLoadingState('Conectado. Bienvenido/a.');
+            const systemPrompt = "Act煤a como un mec谩nico experto de Domifrenos, especializado en sistemas de frenos y embragues. Tu tono debe ser profesional, tranquilizador y f谩cil de entender para alguien sin conocimientos t茅cnicos. No des diagn贸sticos definitivos, en su lugar, explica las posibles causas del problema descrito en una lista con vi帽etas y enfatiza siempre al final, en un p谩rrafo separado y en negrita, la importancia de una revisi贸n profesional en nuestro taller para garantizar la seguridad.";
+
+            try {
+                // Configuraci贸n de la llamada a la API de Gemini
+                const apiKey = ""; // La clave se gestiona en el entorno de ejecuci贸n
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt }]
+                    },
+                };
+                
+                const response = await fetchWithBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    // Formatear el texto de Markdown a HTML para una mejor presentaci贸n
+                    const rawText = candidate.content.parts[0].text;
+                    let formattedText = rawText
+                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Negrita
+                        .replace(/\n\s*\*\s/g, '\n- ') // Unificar vi帽etas a '-'
+                        .replace(/(\n- .*)+/g, (list) => { // Envolver bloques de listas en <ul>
+                           const items = list.trim().split('\n- ').slice(1).map(item => `<li class="mb-2 ml-4 list-disc">${item.trim()}</li>`).join('');
+                           return `<ul>${items}</ul>`;
+                        })
+                        .replace(/\n/g, '<br>'); // Saltos de l铆nea
+
+                    aiResultContainer.innerHTML = `<h4 class="font-bold text-lg mb-3 text-gray-800">An谩lisis Preliminar:</h4><div class="text-gray-700 space-y-3">${formattedText}</div>`;
                 } else {
-                    setUserId(null);
-                    setLoadingState('Autenticaci車n an車nima completada.');
-                }
-                setIsInitialized(true);
-            });
-
-            return () => unsubscribe();
-
-        } catch (error) {
-            console.error("Error durante la inicializaci車n de Firebase:", error);
-            setLoadingState('Error fatal al inicializar Firebase: ' + error.message);
-            setIsInitialized(true);
-        }
-    }, [initialAuthToken, JSON.stringify(firebaseConfig)]);
-
-    // --- 2. Escucha de Documentos P迆blicos (Firestore) ---
-    useEffect(() => {
-        if (db && userId) {
-            // El path sigue siendo /public/ para que los documentos sean accesibles por cualquiera
-            const publicCollectionPath = `/artifacts/${appId}/public/data/pdf_metadata`;
-            const docsRef = collection(db, publicCollectionPath);
-            const q = query(docsRef);
-
-            const unsubscribe = onSnapshot(q, (snapshot) => {
-                const docsList = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })).sort((a, b) => b.uploadedAt?.seconds - a.uploadedAt?.seconds); 
-                
-                setPdfDocuments(docsList);
-                if (isInitialized) {
-                    setLoadingState(`Cargados ${docsList.length} documentos p迆blicos.`);
+                    throw new Error("No se recibi贸 una respuesta v谩lida de la IA.");
                 }
 
-            }, (error) => {
-                console.error("Error al escuchar documentos:", error);
-                setLoadingState('Error al cargar la biblioteca compartida.');
-            });
-
-            return () => unsubscribe(); 
-        }
-    }, [db, userId, appId, isInitialized]);
-
-    // --- 3. L車gica de Subida de PDF a Firebase Storage ---
-    const processFile = (file) => new Promise(async (resolve) => {
-        if (file.type !== 'application/pdf') {
-            return resolve({ fileName: file.name, status: 'fallido', error: 'No es un archivo PDF.' });
-        }
-        
-        // La restricci車n de 1MB ha sido eliminada. Ahora solo revisamos que no sea 0 bytes.
-        if (file.size === 0) {
-            return resolve({ fileName: file.name, status: 'fallido', error: 'Archivo vac赤o.' });
-        }
-
-        // Creamos un nombre de archivo 迆nico para Firebase Storage
-        const fileNameOnStorage = `${appId}/${userId}/${Date.now()}_${file.name}`;
-        const storageRef = ref(storage, fileNameOnStorage);
-        const metadataCollectionPath = `/artifacts/${appId}/public/data/pdf_metadata`;
-
-        try {
-            // 1. Subir el archivo (PDF completo) a Firebase Storage
-            const snapshot = await uploadBytes(storageRef, file, { contentType: 'application/pdf' });
-            
-            // 2. Obtener la URL p迆blica para la descarga
-            const downloadURL = await getDownloadURL(snapshot.ref);
-
-            // 3. Guardar SOLO los metadatos (t赤tulo y URL) en Firestore (DB)
-            const newDoc = {
-                title: file.name.replace('.pdf', '').substring(0, 50),
-                fileName: file.name,
-                uploadedBy: userId,
-                uploadedAt: serverTimestamp(),
-                storagePath: fileNameOnStorage, // Para futura gesti車n (ej. borrado)
-                downloadURL: downloadURL,      // URL directa para cargar/descargar
-                userIdDisplay: userId,
-                fileSize: (file.size / (1024 * 1024)).toFixed(2) + 'MB',
-            };
-            
-            await addDoc(collection(db, metadataCollectionPath), newDoc);
-            resolve({ fileName: file.name, status: '谷xito' });
-        } catch (error) {
-            console.error("Error al subir el documento:", error);
-            resolve({ fileName: file.name, status: 'fallido', error: `Error de Subida: ${error.message}` });
-        }
-    });
-
-    const handleFileUpload = async (e) => {
-        if (!storage || !db) return;
-        const files = Array.from(e.target.files);
-        if (files.length === 0) return;
-
-        setLoadingState(`Iniciando subida de ${files.length} documentos...`);
-        setUploadStatus([]);
-        
-        const results = [];
-        for (const file of files) {
-            setLoadingState(`Subiendo: ${file.name}...`);
-            const result = await processFile(file);
-            results.push(result);
-            setUploadStatus([...results]);
-        }
-
-        setLoadingState('Proceso de subida finalizado. Revisa el resumen.');
-        fileInputRef.current.value = '';
-    };
-    
-    // --- 4. L車gica de Renderizado del PDF (pdf.js) ---
-
-    const renderPdfPage = useCallback((pdf, pageNumToRender) => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        setRenderPending(null);
-
-        pdf.getPage(pageNumToRender).then(function(page) {
-            const viewerContainer = document.getElementById('pdf-viewer-container');
-            if (!viewerContainer) return;
-            const maxWidth = viewerContainer.offsetWidth - 32; 
-            
-            const viewport = page.getViewport({ scale: 1.0 });
-            const scale = maxWidth / viewport.width;
-            const scaledViewport = page.getViewport({ scale: scale });
-
-            canvas.height = scaledViewport.height;
-            canvas.width = scaledViewport.width;
-
-            const renderContext = {
-                canvasContext: ctx,
-                viewport: scaledViewport
-            };
-
-            page.render(renderContext);
-        });
-        setPageNum(pageNumToRender);
-    }, []);
-
-    useEffect(() => {
-        if (pdfDocInstance) {
-            if (renderPending) {
-                const newNum = renderPending;
-                setRenderPending(null);
-                renderPdfPage(pdfDocInstance, newNum);
-            } else {
-                renderPdfPage(pdfDocInstance, pageNum);
+            } catch (error) {
+                console.error("Error al contactar la IA de Gemini:", error);
+                aiResultContainer.innerHTML = '<p class="text-red-600 text-center">Lo sentimos, no pudimos procesar tu solicitud en este momento. Por favor, intenta de nuevo m谩s tarde o cont谩ctanos directamente.</p>';
+            } finally {
+                // Habilitar el bot贸n nuevamente
+                analyzeButton.disabled = false;
+                analyzeButton.classList.remove('opacity-50', 'cursor-not-allowed');
             }
-        }
-    }, [pdfDocInstance, pageNum, renderPdfPage, renderPending]);
-
-    // Funci車n principal para cargar un documento desde la URL de Storage
-    const loadSharedPdf = (doc) => {
-        setPdfFileName(doc.fileName);
-        setLoadingState(`Descargando y cargando ${doc.title} (${doc.fileSize})...`);
-        setUploadStatus([]); 
-
-        try {
-            // Usamos la URL de descarga directa de Storage
-            const loadingTask = pdfjsLib.getDocument({ url: doc.downloadURL });
-
-            loadingTask.promise.then(function(pdf) {
-                setPdfDocInstance(pdf);
-                setNumPages(pdf.numPages);
-                setPageNum(1); 
-                setLoadingState(`Listo para leer: ${doc.title}`);
-            }).catch(function(reason) {
-                console.error("Error al cargar el PDF:", reason);
-                setLoadingState(`Error al cargar PDF: ${reason.message}.`);
-            });
-        } catch (error) {
-            console.error("Error general de carga:", error);
-            setLoadingState('Error de carga. Intenta de nuevo.');
-        }
-    };
-
-    // --- 5. Handlers de Navegaci車n ---
-    const goToPrevPage = () => {
-        if (pageNum > 1) {
-            const newPage = pageNum - 1;
-            setPageNum(newPage);
-            setRenderPending(newPage);
-        }
-    };
-
-    const goToNextPage = () => {
-        if (pdfDocInstance && pageNum < pdfDocInstance.numPages) {
-            const newPage = pageNum + 1;
-            setPageNum(newPage);
-            setRenderPending(newPage);
-        }
-    };
-
-    // --- Componente de Interfaz de Carga (Fallback) ---
-    if (!isInitialized) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-indigo-50 p-4">
-                <svg className="animate-spin h-10 w-10 text-indigo-700 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <h1 className="text-xl font-bold text-indigo-700">Cargando la Biblioteca de PDFs...</h1>
-                <p className="mt-2 text-md text-gray-600 font-medium">{loadingState}</p>
-                <p className="mt-4 text-sm text-gray-500">Si este mensaje persiste o muestra un error, la configuraci車n de la base de datos es incorrecta.</p>
-            </div>
-        );
-    }
-    
-    // --- Componente Principal ---
-    return (
-        <div className="min-h-screen bg-gray-50 p-4 inter-font">
-            <header className="text-center py-4 bg-white shadow-md rounded-xl mb-6">
-                <h1 className="text-3xl font-extrabold text-indigo-700">?9?2 Biblioteca P迆blica de PDFs Matem芍ticos (Ilimitado)</h1>
-                <p className="mt-1 text-sm text-gray-500">Usuario ID: {userId ? userId : 'Desconocido'}</p>
-                <p className="mt-1 text-sm font-medium text-green-600">{loadingState}</p>
-            </header>
-
-            {/* Panel de Subida y Lista */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* 1. Panel de Subida de Archivos */}
-                <div className="lg:col-span-1 p-5 bg-white rounded-xl shadow-lg h-fit">
-                    <h2 className="text-xl font-bold mb-4 text-indigo-600">Subir M迆ltiples PDFs (Sin l赤mite de tama?0?9o)</h2>
-                    <input 
-                        type="file" 
-                        ref={fileInputRef}
-                        accept=".pdf" 
-                        multiple 
-                        onChange={handleFileUpload}
-                        className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-white hover:file:bg-indigo-600"
-                    />
-
-                    {/* Resumen de estado de subida */}
-                    {uploadStatus.length > 0 && (
-                        <div className="mt-4 p-3 border border-gray-200 rounded-lg bg-gray-50 max-h-48 overflow-y-auto">
-                            <h3 className="font-semibold text-sm mb-2 text-indigo-700">Resumen de Subida:</h3>
-                            <ul className="space-y-1">
-                                {uploadStatus.map((item, index) => (
-                                    <li key={index} className="text-xs flex justify-between items-start">
-                                        <span className={`font-medium ${item.status === '谷xito' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {item.status === '谷xito' ? '?7?3 ?0?7xito:' : '?7?4 Fallo:'}
-                                        </span>
-                                        <span className="ml-1 flex-1 truncate">{item.fileName}</span>
-                                        {item.error && <span className="ml-2 text-red-500 italic text-right">{item.error}</span>}
-                                    </li>
-                                ))}
-                            </ul>
-                            <p className="text-xs font-bold mt-2 text-gray-700">
-                                Total Subidos: {uploadStatus.filter(i => i.status === '谷xito').length} / {uploadStatus.length}
-                            </p>
-                        </div>
-                    )}
-                </div>
-
-                {/* 2. Lista de Documentos Compartidos */}
-                <div className="lg:col-span-2 p-5 bg-white rounded-xl shadow-lg max-h-[50vh] lg:max-h-96 overflow-y-auto">
-                    <h2 className="text-xl font-bold mb-4 text-indigo-600">Documentos P迆blicos ({pdfDocuments.length})</h2>
-                    {pdfDocuments.length === 0 ? (
-                        <p className="text-gray-500 italic">A迆n no hay documentos en la biblioteca. ?0?3Sube el primero!</p>
-                    ) : (
-                        <ul className="space-y-3">
-                            {pdfDocuments.map((doc) => (
-                                <li 
-                                    key={doc.id} 
-                                    onClick={() => loadSharedPdf(doc)}
-                                    className="p-3 bg-gray-100 rounded-lg cursor-pointer hover:bg-indigo-100 transition duration-150 border-l-4 border-indigo-500 shadow-sm flex justify-between items-center"
-                                >
-                                    <div>
-                                        <p className="font-semibold text-gray-800 truncate">{doc.title}</p>
-                                        <p className="text-xs text-gray-500">Tama?0?9o: {doc.fileSize} - Subido por: {doc.userIdDisplay.substring(0, 8)}...</p>
-                                    </div>
-                                    <span className="text-sm font-medium text-indigo-700">Leer &rarr;</span>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-            </div>
-
-            <div id="pdf-viewer-container" className="mt-8">
-                {/* 3. Visor de PDF */}
-                <h2 className="text-2xl font-bold text-center mb-4 text-gray-700">{pdfFileName}</h2>
-                
-                {pdfDocInstance && (
-                    <div className="flex justify-center items-center space-x-4 mb-4">
-                        <button 
-                            onClick={goToPrevPage} 
-                            disabled={pageNum <= 1} 
-                            className="px-4 py-2 bg-indigo-500 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-600 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            &larr; Anterior
-                        </button>
-                        <span className="text-lg font-bold text-gray-700">P芍gina: {pageNum} / {numPages}</span>
-                        <button 
-                            onClick={goToNextPage} 
-                            disabled={pageNum >= numPages} 
-                            className="px-4 py-2 bg-indigo-500 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-600 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            Siguiente &rarr;
-                        </button>
-                    </div>
-                )}
-
-                <div className="bg-white rounded-xl shadow-2xl p-4 flex justify-center">
-                    <canvas id="pdf-canvas" ref={canvasRef} className="border border-gray-200"></canvas>
-                </div>
-                
-                {!pdfDocInstance && (
-                    <div className="p-10 text-center text-gray-500 bg-white rounded-xl shadow-lg mt-4">
-                        Selecciona un documento de la lista o sube uno nuevo para comenzar la lectura.
-                    </div>
-                )}
-            </div>
-            
-        </div>
-    );
-};
-
-export default App;
+        });
+    </script>
+</body>
+                     </html>
