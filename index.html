@@ -1,277 +1,392 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matematik - Aprendizaje de Matemáticas</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f9fb;
-        }
-        .card {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        .header-bg {
-            background: linear-gradient(90deg, #1e3a8a 0%, #1d4ed8 100%);
-        }
-        /* Estilos para el Visor Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000; 
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.8);
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 1000px;
-            height: 90%;
-            display: flex;
-            flex-direction: column;
-        }
-        .pdf-canvas-container {
-            flex-grow: 1;
-            overflow: auto;
-            display: flex;
-            justify-content: center;
-        }
-        #pdf-viewer {
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            max-width: 100%; 
-            height: auto;
-        }
-    </style>
-    <!-- Carga del visor de PDF (CDN de Mozilla) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js"></script>
-</head>
-<body class="min-h-screen flex flex-col">
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { 
+    getFirestore, collection, onSnapshot, doc, addDoc, 
+    query, serverTimestamp, setLogLevel 
+} from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-    <!-- Encabezado (Header) -->
-    <header class="header-bg text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <h1 class="text-3xl font-bold tracking-tight">Matematik</h1>
-            <button id="login-button" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">
-                Iniciar Sesión
-            </button>
-        </div>
-    </header>
+// Configuraci車n de la librer赤a pdf.js
+const pdfjsLib = window['pdfjs-dist/build/pdf'];
+// Configura la ruta del worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js';
 
-    <!-- Contenido Principal -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <section class="text-center mb-16">
-            <h2 class="text-5xl font-extrabold text-gray-900 mb-4">
-                El futuro del aprendizaje de matemáticas.
-            </h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                Diseñado para estudiantes que necesitan una ayuda extra y profesores que buscan herramientas modernas.
-            </p>
-        </section>
+const App = () => {
+    const [db, setDb] = useState(null);
+    const [storage, setStorage] = useState(null); // Nuevo estado para Firebase Storage
+    const [userId, setUserId] = useState(null);
+    const [loadingState, setLoadingState] = useState('Inicializando conexi車n...');
+    const [isInitialized, setIsInitialized] = useState(false);
+    const [pdfDocuments, setPdfDocuments] = useState([]);
+    const [uploadStatus, setUploadStatus] = useState([]); 
+    
+    // Estado del visor de PDF
+    const [pdfDocInstance, setPdfDocInstance] = useState(null);
+    const [pageNum, setPageNum] = useState(1);
+    const [numPages, setNumPages] = useState(1);
+    const [renderPending, setRenderPending] = useState(null);
+    const [pdfFileName, setPdfFileName] = useState('Selecciona un documento');
 
-        <!-- Sección de Recursos de Estudio (Acceso a archivos locales) -->
-        <section class="bg-white p-8 rounded-xl card mb-16">
-            <h2 class="text-3xl font-bold text-gray-900 mb-6">Recursos de Estudio</h2>
-            <p class="text-gray-600 mb-4">Solo hay un recurso de prueba, cargado desde la ruta **`prueba.pdf`**.</p>
-            <div id="content-list" class="space-y-4">
-                
-                <!-- RECURSO ÚNICO APUNTANDO A PRUEBA.PDF -->
-                <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center cursor-pointer hover:bg-blue-100 transition duration-150 view-pdf"
-                    data-pdf-url="prueba.pdf">
-                    <span class="font-medium text-blue-800">1. Documento de Prueba (prueba.pdf)</span>
-                    <span class="text-sm text-blue-600 font-semibold py-1 px-3 bg-blue-200 rounded-full">Abrir PDF</span>
-                </div>
+    // Referencias DOM
+    const canvasRef = useRef(null);
+    const fileInputRef = useRef(null);
 
-            </div>
-        </section>
+    // Variables de configuraci車n global
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-    </main>
-
-    <!-- Modal para el Visor de PDF -->
-    <div id="pdf-modal" class="modal">
-        <div class="modal-content">
-            <div class="flex justify-between items-center pb-4 border-b border-gray-200">
-                <h3 id="pdf-title" class="text-xl font-bold text-gray-800">Cargando Documento...</h3>
-                <button id="close-modal" class="text-gray-500 hover:text-gray-700 text-2xl font-bold transition duration-150">&times;</button>
-            </div>
-            <!-- Contenedor del PDF (Canvas) -->
-            <div class="pdf-canvas-container">
-                <canvas id="pdf-viewer"></canvas>
-            </div>
-            <!-- Controles del Visor -->
-            <div class="mt-4 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <!-- Sección de Navegación -->
-                <div class="flex space-x-4">
-                    <button id="prev-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300">Anterior</button>
-                    <span id="page-info" class="font-medium text-gray-700 self-center">Página 0 de 0</span>
-                    <button id="next-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300">Siguiente</button>
-                </div>
-                <!-- Sección de Descarga -->
-                <a id="download-link" href="#" target="_blank" download class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 11.586V4a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                    Descargar PDF
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pie de Página (Footer) -->
-    <footer class="bg-gray-800 text-white mt-12 py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p>&copy; 2024 Matematik. Todos los derechos reservados.</p>
-        </div>
-    </footer>
-
-    <script>
-        // Configuración de PDF.js
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js';
-
-        let pdfDoc = null;
-        let pageNum = 1;
-        let pageRendering = false;
-        let pageNumPending = null;
-        const scale = 2.5; // <-- ¡AUMENTAMOS ESTO PARA MEJOR CALIDAD!
-        const canvas = document.getElementById('pdf-viewer');
-        const ctx = canvas.getContext('2d');
-        const pdfModal = document.getElementById('pdf-modal');
-        const pdfTitle = document.getElementById('pdf-title');
-        const pageInfo = document.getElementById('page-info');
-        const downloadLink = document.getElementById('download-link');
-
-        /**
-         * Renderiza la página actual.
-         */
-        function renderPage(num) {
-            pageRendering = true;
-
-            pdfDoc.getPage(num).then(function(page) {
-                // Cálculo de escala para que se ajuste al ancho del modal
-                const containerWidth = document.querySelector('.modal-content').clientWidth - 40; 
-                let adjustedScale = scale;
-                
-                // Mantiene la calidad alta, pero ajusta la vista si es demasiado grande
-                const initialViewport = page.getViewport({ scale: 1 });
-                if (initialViewport.width * scale > containerWidth) {
-                    // Si la escala alta es más ancha que el contenedor, se ajusta al contenedor.
-                    adjustedScale = containerWidth / initialViewport.width;
-                }
-                
-                const viewport = page.getViewport({ scale: adjustedScale });
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-
-                const renderContext = {
-                    canvasContext: ctx,
-                    viewport: viewport
-                };
-                const renderTask = page.render(renderContext);
-
-                renderTask.promise.then(function() {
-                    pageRendering = false;
-                    if (pageNumPending !== null) {
-                        queueRenderPage(pageNumPending);
-                        pageNumPending = null;
-                    }
-                });
-
-                pageInfo.textContent = 'Página ' + num + ' de ' + pdfDoc.numPages;
-            });
-        }
-
-        /**
-         * Si la página está en proceso de renderizado, espera.
-         */
-        function queueRenderPage(num) {
-            if (pageRendering) {
-                pageNumPending = num;
-            } else {
-                renderPage(num);
+    // --- 1. Inicializaci車n de Firebase (DB y Storage) ---
+    useEffect(() => {
+        try {
+            if (Object.keys(firebaseConfig).length === 0 || !firebaseConfig.apiKey) {
+                setLoadingState('Error: Configuraci車n de Firebase no disponible o incompleta.');
+                setIsInitialized(true);
+                return;
             }
-        }
-
-        // Eventos de Navegación del PDF
-        document.getElementById('prev-page').addEventListener('click', function() {
-            if (pageNum <= 1) return;
-            pageNum--;
-            queueRenderPage(pageNum);
-        });
-
-        document.getElementById('next-page').addEventListener('click', function() {
-            if (pageNum >= pdfDoc.numPages) return;
-            pageNum++;
-            queueRenderPage(pageNum);
-        });
-
-        /**
-         * Abre y carga el PDF en el modal.
-         */
-        function openPdfViewer(url, title) {
-            pdfTitle.textContent = "Cargando: " + title + "...";
-            pageInfo.textContent = 'Página 0 de 0';
-            pdfModal.style.display = 'flex'; 
             
-            // Establece el enlace de descarga usando la URL del PDF
-            downloadLink.href = url;
-            downloadLink.setAttribute('download', title.replace(/[^a-z0-9]/gi, '_') + '.pdf'); // Nombre del archivo
+            setLogLevel('debug');
+            const app = initializeApp(firebaseConfig);
+            const firestore = getFirestore(app);
+            const firebaseStorage = getStorage(app); // Inicializa Storage
+            const firebaseAuth = getAuth(app);
 
-            pdfjsLib.getDocument(url).promise.then(function(pdfDocument) {
-                pdfDoc = pdfDocument;
-                pageNum = 1; 
-                pdfTitle.textContent = title; 
-                renderPage(pageNum);
-            }).catch(function(error) {
-                pdfTitle.textContent = "Error al cargar el PDF. Verifica la ruta: " + url;
-                console.error("Error al cargar el PDF: ", error);
+            setDb(firestore);
+            setStorage(firebaseStorage);
+            
+            const attemptSignIn = async () => {
+                try {
+                    if (initialAuthToken) {
+                        await signInWithCustomToken(firebaseAuth, initialAuthToken);
+                    } else {
+                        await signInAnonymously(firebaseAuth);
+                    }
+                } catch (error) {
+                    console.error("Error signing in:", error);
+                    setLoadingState('Error de autenticaci車n: ' + error.message);
+                }
+            };
+            attemptSignIn();
+
+            const unsubscribe = onAuthStateChanged(firebaseAuth, (user) => {
+                if (user) {
+                    setUserId(user.uid);
+                    setLoadingState('Conectado. Bienvenido/a.');
+                } else {
+                    setUserId(null);
+                    setLoadingState('Autenticaci車n an車nima completada.');
+                }
+                setIsInitialized(true);
             });
+
+            return () => unsubscribe();
+
+        } catch (error) {
+            console.error("Error durante la inicializaci車n de Firebase:", error);
+            setLoadingState('Error fatal al inicializar Firebase: ' + error.message);
+            setIsInitialized(true);
+        }
+    }, [initialAuthToken, JSON.stringify(firebaseConfig)]);
+
+    // --- 2. Escucha de Documentos P迆blicos (Firestore) ---
+    useEffect(() => {
+        if (db && userId) {
+            // El path sigue siendo /public/ para que los documentos sean accesibles por cualquiera
+            const publicCollectionPath = `/artifacts/${appId}/public/data/pdf_metadata`;
+            const docsRef = collection(db, publicCollectionPath);
+            const q = query(docsRef);
+
+            const unsubscribe = onSnapshot(q, (snapshot) => {
+                const docsList = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })).sort((a, b) => b.uploadedAt?.seconds - a.uploadedAt?.seconds); 
+                
+                setPdfDocuments(docsList);
+                if (isInitialized) {
+                    setLoadingState(`Cargados ${docsList.length} documentos p迆blicos.`);
+                }
+
+            }, (error) => {
+                console.error("Error al escuchar documentos:", error);
+                setLoadingState('Error al cargar la biblioteca compartida.');
+            });
+
+            return () => unsubscribe(); 
+        }
+    }, [db, userId, appId, isInitialized]);
+
+    // --- 3. L車gica de Subida de PDF a Firebase Storage ---
+    const processFile = (file) => new Promise(async (resolve) => {
+        if (file.type !== 'application/pdf') {
+            return resolve({ fileName: file.name, status: 'fallido', error: 'No es un archivo PDF.' });
+        }
+        
+        // La restricci車n de 1MB ha sido eliminada. Ahora solo revisamos que no sea 0 bytes.
+        if (file.size === 0) {
+            return resolve({ fileName: file.name, status: 'fallido', error: 'Archivo vac赤o.' });
         }
 
-        /**
-         * Cierra el modal.
-         */
-        document.getElementById('close-modal').addEventListener('click', function() {
-            pdfModal.style.display = 'none';
-        });
+        // Creamos un nombre de archivo 迆nico para Firebase Storage
+        const fileNameOnStorage = `${appId}/${userId}/${Date.now()}_${file.name}`;
+        const storageRef = ref(storage, fileNameOnStorage);
+        const metadataCollectionPath = `/artifacts/${appId}/public/data/pdf_metadata`;
 
-        // Cierra el modal si se hace clic fuera de él
-        window.addEventListener('click', function(event) {
-            if (event.target === pdfModal) {
-                pdfModal.style.display = 'none';
+        try {
+            // 1. Subir el archivo (PDF completo) a Firebase Storage
+            const snapshot = await uploadBytes(storageRef, file, { contentType: 'application/pdf' });
+            
+            // 2. Obtener la URL p迆blica para la descarga
+            const downloadURL = await getDownloadURL(snapshot.ref);
+
+            // 3. Guardar SOLO los metadatos (t赤tulo y URL) en Firestore (DB)
+            const newDoc = {
+                title: file.name.replace('.pdf', '').substring(0, 50),
+                fileName: file.name,
+                uploadedBy: userId,
+                uploadedAt: serverTimestamp(),
+                storagePath: fileNameOnStorage, // Para futura gesti車n (ej. borrado)
+                downloadURL: downloadURL,      // URL directa para cargar/descargar
+                userIdDisplay: userId,
+                fileSize: (file.size / (1024 * 1024)).toFixed(2) + 'MB',
+            };
+            
+            await addDoc(collection(db, metadataCollectionPath), newDoc);
+            resolve({ fileName: file.name, status: '谷xito' });
+        } catch (error) {
+            console.error("Error al subir el documento:", error);
+            resolve({ fileName: file.name, status: 'fallido', error: `Error de Subida: ${error.message}` });
+        }
+    });
+
+    const handleFileUpload = async (e) => {
+        if (!storage || !db) return;
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
+
+        setLoadingState(`Iniciando subida de ${files.length} documentos...`);
+        setUploadStatus([]);
+        
+        const results = [];
+        for (const file of files) {
+            setLoadingState(`Subiendo: ${file.name}...`);
+            const result = await processFile(file);
+            results.push(result);
+            setUploadStatus([...results]);
+        }
+
+        setLoadingState('Proceso de subida finalizado. Revisa el resumen.');
+        fileInputRef.current.value = '';
+    };
+    
+    // --- 4. L車gica de Renderizado del PDF (pdf.js) ---
+
+    const renderPdfPage = useCallback((pdf, pageNumToRender) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        setRenderPending(null);
+
+        pdf.getPage(pageNumToRender).then(function(page) {
+            const viewerContainer = document.getElementById('pdf-viewer-container');
+            if (!viewerContainer) return;
+            const maxWidth = viewerContainer.offsetWidth - 32; 
+            
+            const viewport = page.getViewport({ scale: 1.0 });
+            const scale = maxWidth / viewport.width;
+            const scaledViewport = page.getViewport({ scale: scale });
+
+            canvas.height = scaledViewport.height;
+            canvas.width = scaledViewport.width;
+
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: scaledViewport
+            };
+
+            page.render(renderContext);
+        });
+        setPageNum(pageNumToRender);
+    }, []);
+
+    useEffect(() => {
+        if (pdfDocInstance) {
+            if (renderPending) {
+                const newNum = renderPending;
+                setRenderPending(null);
+                renderPdfPage(pdfDocInstance, newNum);
+            } else {
+                renderPdfPage(pdfDocInstance, pageNum);
             }
-        });
+        }
+    }, [pdfDocInstance, pageNum, renderPdfPage, renderPending]);
 
+    // Funci車n principal para cargar un documento desde la URL de Storage
+    const loadSharedPdf = (doc) => {
+        setPdfFileName(doc.fileName);
+        setLoadingState(`Descargando y cargando ${doc.title} (${doc.fileSize})...`);
+        setUploadStatus([]); 
 
-        // Configuración de los botones de recursos
-        document.addEventListener('DOMContentLoaded', () => {
-            const pdfLinks = document.querySelectorAll('.view-pdf');
+        try {
+            // Usamos la URL de descarga directa de Storage
+            const loadingTask = pdfjsLib.getDocument({ url: doc.downloadURL });
 
-            pdfLinks.forEach(link => {
-                link.addEventListener('click', (event) => {
-                    const url = link.getAttribute('data-pdf-url');
-                    const titleElement = link.querySelector('.font-medium');
-                    const title = titleElement ? titleElement.textContent : 'Documento';
-                    
-                    openPdfViewer(url, title);
-                });
+            loadingTask.promise.then(function(pdf) {
+                setPdfDocInstance(pdf);
+                setNumPages(pdf.numPages);
+                setPageNum(1); 
+                setLoadingState(`Listo para leer: ${doc.title}`);
+            }).catch(function(reason) {
+                console.error("Error al cargar el PDF:", reason);
+                setLoadingState(`Error al cargar PDF: ${reason.message}.`);
             });
+        } catch (error) {
+            console.error("Error general de carga:", error);
+            setLoadingState('Error de carga. Intenta de nuevo.');
+        }
+    };
 
-            // Lógica para el botón de Iniciar Sesión (Estático)
-            document.getElementById('login-button').addEventListener('click', () => {
-                alert('¡Clic en Iniciar Sesión! (Funcionalidad estática)');
-            });
-        });
-    </script>
-</body>
-</html>
+    // --- 5. Handlers de Navegaci車n ---
+    const goToPrevPage = () => {
+        if (pageNum > 1) {
+            const newPage = pageNum - 1;
+            setPageNum(newPage);
+            setRenderPending(newPage);
+        }
+    };
 
+    const goToNextPage = () => {
+        if (pdfDocInstance && pageNum < pdfDocInstance.numPages) {
+            const newPage = pageNum + 1;
+            setPageNum(newPage);
+            setRenderPending(newPage);
+        }
+    };
+
+    // --- Componente de Interfaz de Carga (Fallback) ---
+    if (!isInitialized) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen bg-indigo-50 p-4">
+                <svg className="animate-spin h-10 w-10 text-indigo-700 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <h1 className="text-xl font-bold text-indigo-700">Cargando la Biblioteca de PDFs...</h1>
+                <p className="mt-2 text-md text-gray-600 font-medium">{loadingState}</p>
+                <p className="mt-4 text-sm text-gray-500">Si este mensaje persiste o muestra un error, la configuraci車n de la base de datos es incorrecta.</p>
+            </div>
+        );
+    }
+    
+    // --- Componente Principal ---
+    return (
+        <div className="min-h-screen bg-gray-50 p-4 inter-font">
+            <header className="text-center py-4 bg-white shadow-md rounded-xl mb-6">
+                <h1 className="text-3xl font-extrabold text-indigo-700">?9?2 Biblioteca P迆blica de PDFs Matem芍ticos (Ilimitado)</h1>
+                <p className="mt-1 text-sm text-gray-500">Usuario ID: {userId ? userId : 'Desconocido'}</p>
+                <p className="mt-1 text-sm font-medium text-green-600">{loadingState}</p>
+            </header>
+
+            {/* Panel de Subida y Lista */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* 1. Panel de Subida de Archivos */}
+                <div className="lg:col-span-1 p-5 bg-white rounded-xl shadow-lg h-fit">
+                    <h2 className="text-xl font-bold mb-4 text-indigo-600">Subir M迆ltiples PDFs (Sin l赤mite de tama?0?9o)</h2>
+                    <input 
+                        type="file" 
+                        ref={fileInputRef}
+                        accept=".pdf" 
+                        multiple 
+                        onChange={handleFileUpload}
+                        className="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-white hover:file:bg-indigo-600"
+                    />
+
+                    {/* Resumen de estado de subida */}
+                    {uploadStatus.length > 0 && (
+                        <div className="mt-4 p-3 border border-gray-200 rounded-lg bg-gray-50 max-h-48 overflow-y-auto">
+                            <h3 className="font-semibold text-sm mb-2 text-indigo-700">Resumen de Subida:</h3>
+                            <ul className="space-y-1">
+                                {uploadStatus.map((item, index) => (
+                                    <li key={index} className="text-xs flex justify-between items-start">
+                                        <span className={`font-medium ${item.status === '谷xito' ? 'text-green-600' : 'text-red-600'}`}>
+                                            {item.status === '谷xito' ? '?7?3 ?0?7xito:' : '?7?4 Fallo:'}
+                                        </span>
+                                        <span className="ml-1 flex-1 truncate">{item.fileName}</span>
+                                        {item.error && <span className="ml-2 text-red-500 italic text-right">{item.error}</span>}
+                                    </li>
+                                ))}
+                            </ul>
+                            <p className="text-xs font-bold mt-2 text-gray-700">
+                                Total Subidos: {uploadStatus.filter(i => i.status === '谷xito').length} / {uploadStatus.length}
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                {/* 2. Lista de Documentos Compartidos */}
+                <div className="lg:col-span-2 p-5 bg-white rounded-xl shadow-lg max-h-[50vh] lg:max-h-96 overflow-y-auto">
+                    <h2 className="text-xl font-bold mb-4 text-indigo-600">Documentos P迆blicos ({pdfDocuments.length})</h2>
+                    {pdfDocuments.length === 0 ? (
+                        <p className="text-gray-500 italic">A迆n no hay documentos en la biblioteca. ?0?3Sube el primero!</p>
+                    ) : (
+                        <ul className="space-y-3">
+                            {pdfDocuments.map((doc) => (
+                                <li 
+                                    key={doc.id} 
+                                    onClick={() => loadSharedPdf(doc)}
+                                    className="p-3 bg-gray-100 rounded-lg cursor-pointer hover:bg-indigo-100 transition duration-150 border-l-4 border-indigo-500 shadow-sm flex justify-between items-center"
+                                >
+                                    <div>
+                                        <p className="font-semibold text-gray-800 truncate">{doc.title}</p>
+                                        <p className="text-xs text-gray-500">Tama?0?9o: {doc.fileSize} - Subido por: {doc.userIdDisplay.substring(0, 8)}...</p>
+                                    </div>
+                                    <span className="text-sm font-medium text-indigo-700">Leer &rarr;</span>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </div>
+
+            <div id="pdf-viewer-container" className="mt-8">
+                {/* 3. Visor de PDF */}
+                <h2 className="text-2xl font-bold text-center mb-4 text-gray-700">{pdfFileName}</h2>
+                
+                {pdfDocInstance && (
+                    <div className="flex justify-center items-center space-x-4 mb-4">
+                        <button 
+                            onClick={goToPrevPage} 
+                            disabled={pageNum <= 1} 
+                            className="px-4 py-2 bg-indigo-500 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-600 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            &larr; Anterior
+                        </button>
+                        <span className="text-lg font-bold text-gray-700">P芍gina: {pageNum} / {numPages}</span>
+                        <button 
+                            onClick={goToNextPage} 
+                            disabled={pageNum >= numPages} 
+                            className="px-4 py-2 bg-indigo-500 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-600 transition duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Siguiente &rarr;
+                        </button>
+                    </div>
+                )}
+
+                <div className="bg-white rounded-xl shadow-2xl p-4 flex justify-center">
+                    <canvas id="pdf-canvas" ref={canvasRef} className="border border-gray-200"></canvas>
+                </div>
+                
+                {!pdfDocInstance && (
+                    <div className="p-10 text-center text-gray-500 bg-white rounded-xl shadow-lg mt-4">
+                        Selecciona un documento de la lista o sube uno nuevo para comenzar la lectura.
+                    </div>
+                )}
+            </div>
+            
+        </div>
+    );
+};
+
+export default App;
