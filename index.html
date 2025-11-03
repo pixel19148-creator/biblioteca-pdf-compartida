@@ -3,330 +3,317 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Matematik - Biblioteca de Recursos</title>
+    <title>Biblioteca Matemática - Cuentos Educativos</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Incluimos pdf.js y pdf.worker.js desde CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    </script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f7f9fb;
+            background-color: #f7f9fc;
         }
-        .card {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        .container-main {
+            min-height: 100vh;
         }
-        .header-bg {
-            background: linear-gradient(90deg, #1e3a8a 0%, #1d4ed8 100%);
-        }
-        /* Estilos para el Visor Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000; 
-            left: 0;
+        /* Estilos específicos para la barra de título del PDF */
+        .pdf-title-bar {
+            background-color: #3b82f6; /* Azul de Tailwind 500 */
+            color: white;
+            position: sticky;
             top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.8);
+            z-index: 10;
         }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 1000px;
-            height: 90%;
-            display: flex;
-            flex-direction: column;
+        /* Estilo para los botones de la lista */
+        .book-button {
+            transition: all 0.2s;
         }
-        .pdf-canvas-container {
-            flex-grow: 1;
-            overflow: auto;
-            display: flex;
-            justify-content: center;
-            padding-top: 10px; /* Pequeño espacio para que el canvas no toque el borde */
-        }
-        #pdf-viewer {
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            max-width: 100%; 
-            height: auto;
+        .book-button:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
         }
     </style>
-    <!-- Carga del visor de PDF (CDN de Mozilla) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js"></script>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="bg-gray-100">
 
-    <!-- Encabezado (Header) -->
-    <header class="header-bg text-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-            <h1 class="text-3xl font-bold tracking-tight">Matematik</h1>
-            <button id="login-button" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">
-                Iniciar Sesión
-            </button>
-        </div>
-    </header>
-
-    <!-- Contenido Principal -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <section class="text-center mb-16">
-            <h2 class="text-5xl font-extrabold text-gray-900 mb-4">
-                El futuro del aprendizaje de matemáticas.
-            </h2>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                Accede a nuestra colección completa de 27 recursos esenciales.
-            </p>
-        </section>
-
-        <!-- Sección de Recursos de Estudio (Lista dinámica) -->
-        <section class="bg-white p-8 rounded-xl card mb-16">
-            <h2 class="text-3xl font-bold text-gray-900 mb-6">Biblioteca Completa de 27 PDFs</h2>
-            
-            <!-- Aquí se insertarán los 27 elementos dinámicamente -->
-            <div id="content-list" class="space-y-3">
-                <!-- Se rellena con JavaScript -->
-                <div class="text-center text-gray-500 py-10" id="loading-message">Cargando lista de recursos...</div>
-            </div>
-            
-        </section>
-
-    </main>
-
-    <!-- Modal para el Visor de PDF -->
-    <div id="pdf-modal" class="modal">
-        <div class="modal-content">
-            <div class="flex flex-col sm:flex-row justify-between items-center pb-4 border-b border-gray-200 space-y-2 sm:space-y-0">
-                <h3 id="pdf-title" class="text-xl font-bold text-gray-800 text-center sm:text-left">Cargando Documento...</h3>
-                <button id="close-modal" class="text-gray-500 hover:text-gray-700 text-2xl font-bold transition duration-150">&times;</button>
-            </div>
-            <!-- Contenedor del PDF (Canvas) -->
-            <div class="pdf-canvas-container">
-                <canvas id="pdf-viewer"></canvas>
-            </div>
-            <!-- Controles del Visor y Descarga -->
-            <div class="mt-4 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                <!-- Sección de Navegación -->
-                <div class="flex space-x-4">
-                    <button id="prev-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300">Anterior</button>
-                    <span id="page-info" class="font-medium text-gray-700 self-center">Página 0 de 0</span>
-                    <button id="next-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300">Siguiente</button>
+    <!-- Modal para el visor de PDF -->
+    <div id="pdfModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden z-50 overflow-y-auto">
+        <div class="flex flex-col h-full w-full mx-auto">
+            <!-- Barra de Título y Cierre del PDF -->
+            <div id="pdfTitleBar" class="pdf-title-bar p-3 flex justify-between items-center shadow-lg">
+                <div class="text-lg font-semibold" id="modalTitle"></div>
+                <div class="flex items-center space-x-4">
+                    <span id="pageInfo" class="text-sm font-medium hidden sm:block">Página <span id="currentPage">0</span> de <span id="totalPages">0</span></span>
+                    <button id="prevPage" class="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full transition duration-150" title="Página Anterior">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <button id="nextPage" class="p-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full transition duration-150" title="Página Siguiente">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                    <button id="downloadPdf" class="px-4 py-1.5 bg-green-500 hover:bg-green-600 rounded-full text-sm font-medium transition duration-150 flex items-center space-x-1" title="Descargar PDF">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L10 11.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v7a1 1 0 11-2 0V4a1 1 0 011-1z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="hidden sm:inline">Descargar</span>
+                    </button>
+                    <button id="closeModal" class="p-2 bg-red-500 hover:bg-red-600 rounded-full transition duration-150" title="Cerrar Visor">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </div>
-                <!-- Sección de Descarga -->
-                <a id="download-link" href="#" target="_blank" download class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 11.586V4a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                    Descargar PDF
-                </a>
+            </div>
+
+            <!-- Contenedor del Visor de PDF y Mensajes de Error/Carga -->
+            <div class="flex-grow p-4 overflow-y-auto relative flex justify-center items-center bg-gray-200">
+                <canvas id="pdfCanvas" class="shadow-2xl rounded-lg max-w-full"></canvas>
+                
+                <!-- Mensajes de Estado (Carga, Error, etc.) -->
+                <div id="statusMessage" class="absolute inset-0 bg-white bg-opacity-90 flex flex-col justify-center items-center p-8 hidden">
+                    <p id="statusText" class="text-xl text-gray-700 font-semibold text-center"></p>
+                    <button id="retryButton" class="mt-4 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-150 hidden">Reintentar</button>
+                </div>
             </div>
         </div>
     </div>
+    
+    <!-- Contenido Principal de la Biblioteca -->
+    <div class="container-main mx-auto p-4 sm:p-8">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-800 tracking-tight">Biblioteca de Cuentos Matemáticos</h1>
+            <p class="text-lg text-gray-500 mt-2">Una colección para explorar el mundo de los números y la geometría.</p>
+        </header>
 
-    <!-- Pie de Página (Footer) -->
-    <footer class="bg-gray-800 text-white mt-12 py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p>&copy; 2024 Matematik. Todos los derechos reservados.</p>
-        </div>
-    </footer>
+        <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- La lista de documentos se generará aquí -->
+        </main>
+
+        <footer class="text-center mt-12 pt-6 border-t border-gray-300 text-gray-500 text-sm">
+            <p>Proyecto desarrollado para compartir recursos educativos en línea.</p>
+        </footer>
+    </div>
 
     <script>
-        // =========================================================================
-        // 1. LISTA COMPLETA DE 27 RECURSOS (EXTRAÍDOS DE LA IMAGEN)
-        // La ruta 'pdfs/' se añade automáticamente a cada archivo, excepto a prueba.pdf.
-        // =========================================================================
-        const rawPdfNames = [
-            "CIUDAD GEOMÉTRICA.pdf",
-            "DON PORCENTAJE.pdf",
-            "ECUACIÓN PERFECTA DEL AMOR.pdf",
-            "EL CERO Y SU TRISTEZA.pdf",
-            "EL CUBO SOÑADOR.pdf",
-            "EL ENREDO DE LOS CEROS.pdf",
-            "EL ORIGEN DEL ÁLGEBRA.pdf",
-            "EL TALLER DE NACHO.pdf",
-            "EL SEÑOR MIXTO SE CONVIERTE EN UNA FRACCIÓN.pdf",
-            "EL UNO ROJO Y EL NUEVE MALO.pdf",
-            "EL VIAJE DE LA AVENTURAN GEOMÉTRICA.pdf",
-            "LA AVENTURA MATEMÁTICA DE CENICIENTA.pdf",
-            "La carrera de las funciones.pdf",
-            "La fiesta del Seno y del Coseno.pdf",
-            "LA GRAN IMPORTANCIA DE LOS NÚMEROS EN EL FÚTBOL.pdf",
-            "LA LOCURA DEL UNO.pdf",
-            "LA REBELIÓN DE LOS NÚMEROS.pdf",
-            "LAS MATEMÁTICAS DEL AMOR.pdf",
-            "LAS MATEMÁTICAS UN MUNDO POR CONOCER.pdf",
-            "Los tres ceritos y la incógnita feroz.pdf",
-            "PARTE ENTERA.pdf",
-            "POEMA MATEMATICO.pdf",
-            "QUIÉN ES EL MEJOR.pdf",
-            "RAIZ CUADRADA.pdf",
-            "UNA GRAN FAMILIA NUMÉRICA.pdf",
-            "VECTOR NULO.pdf",
-            "Ecuaciones del corazón.pdf"
-        ];
-
-        // Mapeo la lista de nombres de archivo a objetos con título y ruta
-        const pdfList = rawPdfNames.map(name => {
-            // Elimina la extensión .pdf y convierte a minúsculas para el título amigable
-            const baseTitle = name.replace(/\.pdf$/i, '').toUpperCase();
-            
-            // Asume que todos están en la carpeta 'pdfs/', excepto el archivo de prueba si lo tienes aparte.
-            const filename = 'pdfs/' + name; 
-
-            return { title: baseTitle, filename: filename };
-        });
-
-        // Opcional: Si quieres mantener el archivo de prueba original en la raíz, puedes añadirlo aquí
-        // pdfList.unshift({ title: "DOCUMENTO DE PRUEBA (RAÍZ)", filename: "prueba.pdf" });
-
-
-        // =========================================================================
-        // 2. LÓGICA DEL VISOR DE PDF
-        // =========================================================================
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js';
-
+        const pdfModal = document.getElementById('pdfModal');
+        const pdfCanvas = document.getElementById('pdfCanvas');
+        const modalTitle = document.getElementById('modalTitle');
+        const statusMessage = document.getElementById('statusMessage');
+        const statusText = document.getElementById('statusText');
+        const retryButton = document.getElementById('retryButton');
+        const prevPageButton = document.getElementById('prevPage');
+        const nextPageButton = document.getElementById('nextPage');
+        const currentPageSpan = document.getElementById('currentPage');
+        const totalPagesSpan = document.getElementById('totalPages');
+        const pageInfo = document.getElementById('pageInfo');
+        const downloadPdfButton = document.getElementById('downloadPdf');
+        const mainContent = document.querySelector('main');
+        
         let pdfDoc = null;
         let pageNum = 1;
-        let pageRendering = false;
-        let pageNumPending = null;
-        const scale = 2.5; // Resolución alta para nitidez (lo que soluciona el problema de "borroso")
-        const canvas = document.getElementById('pdf-viewer');
-        const ctx = canvas.getContext('2d');
-        const pdfModal = document.getElementById('pdf-modal');
-        const pdfTitle = document.getElementById('pdf-title');
-        const pageInfo = document.getElementById('page-info');
-        const downloadLink = document.getElementById('download-link');
+        let pdfUrl = '';
 
-        function renderPage(num) {
-            pageRendering = true;
+        // Lista de documentos (AQUÍ ESTÁ LA CORRECCIÓN DE LA RUTA DEL ARCHIVO)
+        const documents = [
+            { title: "CIUDAD GEOMÉTRICA", file: "pdfs/CIUDAD GEOMÉTRICA.pdf" },
+            { title: "DON PORCENTAJE", file: "pdfs/DON PORCENTAJE.pdf" },
+            { title: "ECUACIÓN PERFECTA DEL AMOR", file: "pdfs/ECUACIÓN PERFECTA DEL AMOR.pdf" },
+            { title: "EL CERO Y SU TRISTEZA", file: "pdfs/EL CERO Y SU TRISTEZA.pdf" },
+            { title: "EL CUBO SOÑADOR", file: "pdfs/EL CUBO SOÑADOR.pdf" },
+            { title: "EL ENREDO DE LOS CEROS", file: "pdfs/EL ENREDO DE LOS CEROS.pdf" },
+            { title: "EL ORIGEN DEL ÁLGEBRA", file: "pdfs/EL ORIGEN DEL ÁLGEBRA.pdf" },
+            { title: "EL SEÑOR MIXTO SE CONVIERTE EN UNA FRACCIÓN", file: "pdfs/EL SEÑOR MIXTO SE CONVIERTE EN UNA FRACCIÓN.pdf" },
+            { title: "EL TALLER DE NACHO", file: "pdfs/EL TALLER DE NACHO.pdf" },
+            { title: "EL UNO ROJO Y EL NUEVE MALO", file: "pdfs/EL UNO ROJO Y EL NUEVE MALO.pdf" },
+            // **CORRECCIÓN AQUÍ:** Se cambió 'AVENTURAN' por 'AVENTURA' para que coincida con el nombre del archivo subido.
+            { title: "EL VIAJE DE LA AVENTURA GEOMÉTRICA", file: "pdfs/EL VIAJE DE LA AVENTURA GEOMÉTRICA.pdf" },
+            { title: "LA AVENTURA MATEMÁTICA DE CENICIENTA", file: "pdfs/LA AVENTURA MATEMÁTICA DE CENICIENTA.pdf" },
+            { title: "LA CARRERA DE LAS FUNCIONES", file: "pdfs/LA CARRERA DE LAS FUNCIONES.pdf" },
+            { title: "LA FIESTA DEL SENO Y DEL COSENO", file: "pdfs/LA FIESTA DEL SENO Y DEL COSENO.pdf" },
+            { title: "LA GRAN IMPORTANCIA DE LOS NÚMEROS EN EL FÚTBOL", file: "pdfs/LA GRAN IMPORTANCIA DE LOS NÚMEROS EN EL FÚTBOL.pdf" },
+            { title: "LA LOCURA DEL UNO", file: "pdfs/LA LOCURA DEL UNO.pdf" },
+            { title: "LA REBELIÓN DE LOS NÚMEROS", file: "pdfs/LA REBELIÓN DE LOS NÚMEROS.pdf" },
+            { title: "LAS MATEMÁTICAS DEL AMOR", file: "pdfs/LAS MATEMÁTICAS DEL AMOR.pdf" },
+            { title: "LAS MATEMÁTICAS UN MUNDO POR CONOCER", file: "pdfs/LAS MATEMÁTICAS UN MUNDO POR CONOCER.pdf" },
+            { title: "Los tres ceritos y la incógnita feroz", file: "pdfs/Los tres ceritos y la incógnita feroz.pdf" },
+            { title: "PARTE ENTERA", file: "pdfs/PARTE ENTERA.pdf" },
+            { title: "POEMA MATEMATICO", file: "pdfs/POEMA MATEMATICO.pdf" },
+            { title: "QUIÉN ES EL MEJOR", file: "pdfs/QUIÉN ES EL MEJOR.pdf" },
+            { title: "RAÍZ CUADRADA", file: "pdfs/RAÍZ CUADRADA.pdf" },
+            { title: "UNA GRAN FAMILIA NUMÉRICA", file: "pdfs/UNA GRAN FAMILIA NUMÉRICA.pdf" },
+            { title: "VECTOR NULO", file: "pdfs/VECTOR NULO.pdf" },
+            { title: "Ecuaciones del corazón", file: "pdfs/Ecuaciones del corazón.pdf" },
+        ];
 
-            pdfDoc.getPage(num).then(function(page) {
-                // Ajuste de escala para mejor visualización manteniendo alta calidad
-                const containerWidth = document.querySelector('.modal-content').clientWidth - 40; 
-                let adjustedScale = scale;
-                
-                const initialViewport = page.getViewport({ scale: 1 });
-                if (initialViewport.width * scale > containerWidth) {
-                    adjustedScale = containerWidth / initialViewport.width;
+
+        /**
+         * Funciones para la UI
+         */
+        function renderDocumentButtons() {
+            documents.forEach(doc => {
+                const button = document.createElement('button');
+                button.className = 'book-button bg-white p-6 rounded-xl shadow-md text-left transition duration-200 ease-in-out hover:bg-blue-50 hover:border-blue-500 border-2 border-transparent';
+                button.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0113 3.414L16.586 7A2 2 0 0118 8.414v8.586A2 2 0 0116 19H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+                        </svg>
+                        <span class="text-lg font-semibold text-gray-800">${doc.title}</span>
+                    </div>
+                    <p class="mt-2 text-sm text-gray-500">Haz clic para leer el cuento.</p>
+                `;
+                button.onclick = () => openPdfViewer(doc.file, doc.title);
+                mainContent.appendChild(button);
+            });
+        }
+
+        function showStatus(text, showRetry = false) {
+            statusText.textContent = text;
+            retryButton.classList.toggle('hidden', !showRetry);
+            statusMessage.classList.remove('hidden');
+            pdfCanvas.classList.add('hidden');
+            pageInfo.classList.add('hidden');
+        }
+
+        function hideStatus() {
+            statusMessage.classList.add('hidden');
+            pdfCanvas.classList.remove('hidden');
+            pageInfo.classList.remove('hidden');
+        }
+
+        /**
+         * Funciones del Visor de PDF
+         */
+        async function openPdfViewer(url, title) {
+            pdfUrl = url;
+            modalTitle.textContent = title;
+            pdfModal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+            pageNum = 1;
+            pdfDoc = null;
+            await renderPdf(url);
+
+            // Actualizar el enlace de descarga
+            downloadPdfButton.onclick = () => {
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = title.replace(/\s/g, '_') + '.pdf';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+        }
+
+        function closeModal() {
+            pdfModal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            pdfDoc = null; // Liberar el documento
+            pdfCanvas.getContext('2d').clearRect(0, 0, pdfCanvas.width, pdfCanvas.height); // Limpiar canvas
+        }
+
+        async function renderPdf(url) {
+            showStatus('Cargando documento...', false);
+            try {
+                if (!pdfDoc) {
+                    const loadingTask = pdfjsLib.getDocument(url);
+                    pdfDoc = await loadingTask.promise;
+                    totalPagesSpan.textContent = pdfDoc.numPages;
                 }
                 
-                const viewport = page.getViewport({ scale: adjustedScale });
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-
-                const renderContext = { canvasContext: ctx, viewport: viewport };
-                const renderTask = page.render(renderContext);
-
-                renderTask.promise.then(function() {
-                    pageRendering = false;
-                    if (pageNumPending !== null) {
-                        queueRenderPage(pageNumPending);
-                        pageNumPending = null;
-                    }
-                });
-
-                pageInfo.textContent = 'Página ' + num + ' de ' + pdfDoc.numPages;
-            });
-        }
-
-        function queueRenderPage(num) {
-            if (pageRendering) {
-                pageNumPending = num;
-            } else {
-                renderPage(num);
-            }
-        }
-
-        document.getElementById('prev-page').addEventListener('click', function() {
-            if (pageNum <= 1) return;
-            pageNum--;
-            queueRenderPage(pageNum);
-        });
-
-        document.getElementById('next-page').addEventListener('click', function() {
-            if (pageNum >= pdfDoc.numPages) return;
-            pageNum++;
-            queueRenderPage(pageNum);
-        });
-
-        function openPdfViewer(url, title, filename) {
-            pdfTitle.textContent = "Cargando: " + title + "...";
-            pageInfo.textContent = 'Página 0 de 0';
-            pdfModal.style.display = 'flex'; 
-            
-            // Configura el enlace de descarga (usando la URL relativa)
-            downloadLink.href = url;
-            downloadLink.setAttribute('download', filename.split('/').pop()); // Usar solo el nombre del archivo
-
-            pdfjsLib.getDocument(url).promise.then(function(pdfDocument) {
-                pdfDoc = pdfDocument;
-                pageNum = 1; 
-                pdfTitle.textContent = title; 
-                renderPage(pageNum);
-            }).catch(function(error) {
-                pdfTitle.textContent = "Error al cargar el PDF. Verifica que el archivo '" + filename + "' exista en la ruta correcta (¿está en la carpeta pdfs/?)";
-                console.error("Error al cargar el PDF: ", error);
-            });
-        }
-
-        document.getElementById('close-modal').addEventListener('click', function() {
-            pdfModal.style.display = 'none';
-        });
-
-        window.addEventListener('click', function(event) {
-            if (event.target === pdfModal) {
-                pdfModal.style.display = 'none';
-            }
-        });
-
-        // =========================================================================
-        // 3. GENERACIÓN DINÁMICA DE LA LISTA
-        // =========================================================================
-        function generatePdfList() {
-            const listContainer = document.getElementById('content-list');
-            listContainer.innerHTML = ''; // Limpia el mensaje de carga
-
-            if (pdfList.length === 0) {
-                listContainer.innerHTML = '<p class="text-gray-500 text-center">No hay recursos disponibles.</p>';
-                return;
-            }
-
-            pdfList.forEach((pdf, index) => {
-                const element = document.createElement('div');
-                element.className = 'p-4 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center cursor-pointer hover:bg-blue-100 transition duration-150 view-pdf';
+                const page = await pdfDoc.getPage(pageNum);
                 
-                element.innerHTML = `
-                    <span class="font-medium text-blue-800">${index + 1}. ${pdf.title}</span>
-                    <span class="text-sm text-blue-600 font-semibold py-1 px-3 bg-blue-200 rounded-full">Abrir PDF</span>
-                `;
+                // Determinar la escala para que quepa en la pantalla
+                const viewport = page.getViewport({ scale: 1 });
+                const modalContainer = pdfCanvas.parentElement;
+                
+                // Escala basada en el ancho del contenedor, dejando un poco de margen
+                let scale = (modalContainer.clientWidth * 0.95) / viewport.width;
 
-                // Añadir evento de click
-                element.addEventListener('click', () => {
-                    openPdfViewer(pdf.filename, pdf.title, pdf.filename);
-                });
+                // Si la escala es demasiado grande, limítala para el alto de la pantalla (solo en pantallas grandes)
+                if (scale * viewport.height > modalContainer.clientHeight * 0.95 && modalContainer.clientHeight > 0) {
+                     scale = (modalContainer.clientHeight * 0.95) / viewport.height;
+                }
 
-                listContainer.appendChild(element);
-            });
+                // Asegurar que la escala no sea menor a 0.5 para legibilidad mínima en móvil
+                scale = Math.max(0.5, scale);
+
+                const finalViewport = page.getViewport({ scale: scale });
+
+                pdfCanvas.height = finalViewport.height;
+                pdfCanvas.width = finalViewport.width;
+
+                const renderContext = {
+                    canvasContext: pdfCanvas.getContext('2d'),
+                    viewport: finalViewport
+                };
+                
+                await page.render(renderContext).promise;
+                currentPageSpan.textContent = pageNum;
+                hideStatus();
+                updatePagingButtons();
+
+            } catch (error) {
+                console.error('Error al cargar o renderizar el PDF:', error);
+                showStatus(`Error al cargar el PDF: ${error.message}. Verifica si el archivo existe en la ruta correcta: ${url}`, true);
+            }
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            generatePdfList(); // Genera la lista al cargar la página
+        function updatePagingButtons() {
+            prevPageButton.disabled = pageNum <= 1;
+            nextPageButton.disabled = pageNum >= pdfDoc.numPages;
 
-            document.getElementById('login-button').addEventListener('click', () => {
-                // Mensaje de alerta para funcionalidad estática
-                const customAlert = document.createElement('div');
-                customAlert.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
-                customAlert.innerHTML = `
-                    <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm">
-                        <p class="text-lg font-semibold mb-4">Funcionalidad Estática</p>
-                        <p class="text-gray-600 mb-6">El botón "Iniciar Sesión" es solo un marcador de posición en esta versión. ¡Clic en Iniciar Sesión!</p>
-                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300" onclick="this.closest('.fixed').remove()">Cerrar</button>
-                    </div>
-                `;
-                document.body.appendChild(customAlert);
-            });
+            prevPageButton.classList.toggle('opacity-50', pageNum <= 1);
+            nextPageButton.classList.toggle('opacity-50', pageNum >= pdfDoc.numPages);
+        }
+
+        function goToPage(delta) {
+            if (!pdfDoc) return;
+            const newPageNum = pageNum + delta;
+
+            if (newPageNum >= 1 && newPageNum <= pdfDoc.numPages) {
+                pageNum = newPageNum;
+                renderPdf(pdfUrl); // No necesita recargar el documento, solo renderizar
+            }
+        }
+
+        /**
+         * Inicialización y Eventos
+         */
+        window.onload = renderDocumentButtons;
+
+        document.getElementById('closeModal').onclick = closeModal;
+        prevPageButton.onclick = () => goToPage(-1);
+        nextPageButton.onclick = () => goToPage(1);
+        retryButton.onclick = () => renderPdf(pdfUrl);
+
+        // Permitir cerrar con la tecla ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !pdfModal.classList.contains('hidden')) {
+                closeModal();
+            }
+            if (e.key === 'ArrowLeft' && !prevPageButton.disabled && !pdfModal.classList.contains('hidden')) {
+                goToPage(-1);
+            }
+            if (e.key === 'ArrowRight' && !nextPageButton.disabled && !pdfModal.classList.contains('hidden')) {
+                goToPage(1);
+            }
         });
+        
+        // Manejar el cambio de tamaño para redibujar el canvas
+        window.addEventListener('resize', () => {
+            if (pdfDoc && !pdfModal.classList.contains('hidden')) {
+                // Si el modal está abierto, volvemos a renderizar para ajustar la escala
+                renderPdf(pdfUrl);
+            }
+        });
+
     </script>
 </body>
 </html>
