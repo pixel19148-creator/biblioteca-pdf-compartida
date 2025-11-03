@@ -124,7 +124,6 @@
             </div>
             
             <!-- Contenedor del Visor de PDF y Mensajes de Error/Carga -->
-            <!-- Añadimos padding inferior para evitar que el contenido se esconda detrás de la barra móvil -->
             <div class="flex-grow p-4 overflow-y-auto relative flex justify-center items-center bg-gray-200 sm:pb-4 pb-20"> 
                 <canvas id="pdfCanvas" class="shadow-2xl rounded-lg max-w-full"></canvas>
                 
@@ -158,7 +157,7 @@
     </div>
 
     <script>
-        // Declaración de variables de la UI
+        // Declaración de variables de la UI (omitiendo por brevedad)
         const pdfModal = document.getElementById('pdfModal');
         const pdfCanvas = document.getElementById('pdfCanvas');
         const modalTitle = document.getElementById('modalTitle');
@@ -166,29 +165,24 @@
         const statusText = document.getElementById('statusText');
         const loaderSpinner = document.getElementById('loaderSpinner');
         const retryButton = document.getElementById('retryButton');
-        
-        // Botones de paginación (Desktop + Mobile)
         const prevPageDesktop = document.getElementById('prevPageDesktop');
         const nextPageDesktop = document.getElementById('nextPageDesktop');
         const prevPageMobile = document.getElementById('prevPageMobile');
         const nextPageMobile = document.getElementById('nextPageMobile');
-
-        // Indicadores de página
         const currentPageSpan = document.getElementById('currentPage');
         const totalPagesSpan = document.getElementById('totalPages');
         const currentPageMobile = document.getElementById('currentPageMobile');
         const totalPagesMobile = document.getElementById('totalPagesMobile');
         const pageInfo = document.getElementById('pageInfo');
-        
         const downloadPdfButton = document.getElementById('downloadPdf');
         const mainContent = document.querySelector('main');
         
-        // Variables de estado del PDF
         let pdfDoc = null;
         let pageNum = 1;
         let pdfUrl = '';
+        let currentTitle = ''; // Para usar en la descarga
 
-        // Lista de documentos (Asegurando la RUTA EXACTA del archivo, como se verificó previamente)
+        // *** LISTA DE DOCUMENTOS CON LAS RUTAS CORREGIDAS ***
         const documents = [
             { title: "CIUDAD GEOMÉTRICA", file: "pdfs/CIUDAD GEOMÉTRICA.pdf" },
             { title: "DON PORCENTAJE", file: "pdfs/DON PORCENTAJE.pdf" },
@@ -200,6 +194,7 @@
             { title: "EL SEÑOR MIXTO SE CONVIERTE EN UNA FRACCIÓN", file: "pdfs/EL SEÑOR MIXTO SE CONVIERTE EN UNA FRACCIÓN.pdf" },
             { title: "EL TALLER DE NACHO", file: "pdfs/EL TALLER DE NACHO.pdf" },
             { title: "EL UNO ROJO Y EL NUEVE MALO", file: "pdfs/EL UNO ROJO Y EL NUEVE MALO.pdf" },
+            // RUTA FINAL CORREGIDA (Un solo punto antes de .pdf y mayúsculas respetadas):
             { title: "EL VIAJE DE LA AVENTURA GEOMÉTRICA", file: "pdfs/EL VIAJE DE LA AVENTURA GEOMÉTRICA.pdf" },
             { title: "LA AVENTURA MATEMÁTICA DE CENICIENTA", file: "pdfs/LA AVENTURA MATEMÁTICA DE CENICIENTA.pdf" },
             { title: "LA CARRERA DE LAS FUNCIONES", file: "pdfs/LA CARRERA DE LAS FUNCIONES.pdf" },
@@ -266,15 +261,14 @@
          */
         async function openPdfViewer(url, title) {
             pdfUrl = url;
+            currentTitle = title;
             modalTitle.textContent = title;
             pdfModal.classList.remove('hidden');
             document.body.classList.add('overflow-hidden');
             pageNum = 1;
             pdfDoc = null;
             
-            // ** CORRECCIÓN DE NAVEGACIÓN (Punto 2) **
-            // Añadir un estado al historial del navegador para que el botón "Atrás" 
-            // no cierre la aplicación sino el modal.
+            // CORRECCIÓN DE NAVEGACIÓN (Botón Atrás en Móvil)
             window.history.pushState({ pdfOpen: true }, '', '#viewer'); 
 
             await renderPdf(url);
@@ -282,8 +276,9 @@
             // Actualizar el enlace de descarga
             downloadPdfButton.onclick = () => {
                 const link = document.createElement('a');
-                link.href = url;
-                link.download = title.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf'; // Sanitizar el nombre
+                link.href = pdfUrl;
+                // Usamos el título del documento para el nombre del archivo descargado
+                link.download = currentTitle + '.pdf'; 
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -291,37 +286,34 @@
         }
 
         function closeModal() {
-            if (pdfModal.classList.contains('hidden')) return; // Evitar doble cierre
+            if (pdfModal.classList.contains('hidden')) return; 
 
             pdfModal.classList.add('hidden');
             document.body.classList.remove('overflow-hidden');
-            pdfDoc = null; // Liberar el documento
-            pdfCanvas.getContext('2d').clearRect(0, 0, pdfCanvas.width, pdfCanvas.height); // Limpiar canvas
+            pdfDoc = null; 
+            pdfCanvas.getContext('2d').clearRect(0, 0, pdfCanvas.width, pdfCanvas.height); 
         }
 
         async function renderPdf(url) {
-            showStatus('Cargando documento...', false, true); // Mostrar Spinner
+            showStatus('Cargando documento...', false, true); 
             try {
                 if (!pdfDoc) {
                     const loadingTask = pdfjsLib.getDocument(url);
                     pdfDoc = await loadingTask.promise;
-                    // Actualizar total de páginas en Desktop y Mobile
                     totalPagesSpan.textContent = pdfDoc.numPages;
                     totalPagesMobile.textContent = pdfDoc.numPages;
                 }
                 
                 const page = await pdfDoc.getPage(pageNum);
                 
-                // Determinar la escala responsiva
                 const viewport = page.getViewport({ scale: 1 });
                 const modalContainer = pdfCanvas.parentElement;
                 
-                // Calcular escala para el 95% del ancho o alto visible
                 let scale = (modalContainer.clientWidth * 0.95) / viewport.width;
                 if (scale * viewport.height > modalContainer.clientHeight * 0.9) {
                      scale = (modalContainer.clientHeight * 0.9) / viewport.height;
                 }
-                scale = Math.max(0.7, scale); // Asegurar una escala mínima para mejor legibilidad
+                scale = Math.max(0.7, scale); 
 
                 const finalViewport = page.getViewport({ scale: scale });
 
@@ -335,7 +327,6 @@
                 
                 await page.render(renderContext).promise;
                 
-                // Actualizar página actual en Desktop y Mobile
                 currentPageSpan.textContent = pageNum;
                 currentPageMobile.textContent = pageNum;
 
@@ -344,13 +335,14 @@
 
             } catch (error) {
                 console.error('Error al cargar o renderizar el PDF:', error);
-                showStatus(`Error al cargar el PDF: ${error.message}. Verifica la ruta: ${url}.`, true, false);
+                // Mensaje de error útil sobre la ruta del archivo.
+                showStatus(`Error de carga (404). Verifica que el archivo "${currentTitle}.pdf" esté EXACTAMENTE en la carpeta 'pdfs/' y no tenga espacios, puntos o caracteres extra en su nombre.`, true, false);
             }
         }
 
         function updatePagingButtons() {
             const isFirst = pageNum <= 1;
-            const isLast = pageNum >= pdfDoc.numPages;
+            const isLast = pdfDoc && pageNum >= pdfDoc.numPages;
 
             // Desktop
             prevPageDesktop.disabled = isFirst;
@@ -382,16 +374,11 @@
 
         document.getElementById('closeModal').onclick = closeModal;
         retryButton.onclick = () => renderPdf(pdfUrl);
-
-        // Eventos para botones de paginación de Desktop
         prevPageDesktop.onclick = () => goToPage(-1);
         nextPageDesktop.onclick = () => goToPage(1);
-
-        // Eventos para botones de paginación de Mobile
         prevPageMobile.onclick = () => goToPage(-1);
         nextPageMobile.onclick = () => goToPage(1);
 
-        // Eventos de teclado para navegación
         document.addEventListener('keydown', (e) => {
             if (!pdfModal.classList.contains('hidden')) {
                 if (e.key === 'Escape') {
@@ -404,24 +391,23 @@
             }
         });
         
-        // Manejar el cambio de tamaño de la ventana para redibujar el canvas (responsividad)
         window.addEventListener('resize', () => {
             if (pdfDoc && !pdfModal.classList.contains('hidden')) {
                 renderPdf(pdfUrl);
             }
         });
         
-        // ** SOLUCIÓN AL PROBLEMA DEL BOTÓN ATRÁS EN MÓVIL (Punto 2) **
-        // Escucha el evento 'popstate' que se dispara cuando el usuario presiona "Atrás"
+        // SOLUCIÓN AL PROBLEMA DEL BOTÓN ATRÁS EN MÓVIL
         window.addEventListener('popstate', (event) => {
-            // Si el modal está visible y el historial no tiene nuestro estado 'pdfOpen: true', lo cerramos.
-            // Si el estado es nulo, significa que el usuario ha retrocedido el estado que creamos.
-            if (pdfModal.classList.contains('hidden') === false && (!event.state || !event.state.pdfOpen)) {
-                closeModal();
-                // Opcional: Reemplazar el estado para evitar que el siguiente "Atrás" salga de la app
-                window.history.replaceState(null, '', location.pathname);
+            // Solo actuar si el modal está abierto
+            if (pdfModal.classList.contains('hidden') === false) {
+                // Si el evento es un retroceso (y no es nuestro estado original de #viewer), cerramos el modal.
+                if (location.hash !== '#viewer') {
+                    closeModal();
+                    // Reemplazamos el estado para evitar que un segundo "Atrás" salga de la aplicación.
+                    window.history.replaceState(null, '', location.pathname); 
+                }
             }
-            // Si el modal NO está visible, permitimos la navegación normal.
         });
 
     </script>
