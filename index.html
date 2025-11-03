@@ -3,273 +3,330 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Domifrenos - Expertos en Frenos y Cloches</title>
-    <!-- Inclusi贸n de Tailwind CSS para un dise帽o moderno y adaptable --><script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inclusi贸n de la fuente Inter de Google Fonts para una mejor legibilidad --><link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <title>Matematik - Biblioteca de Recursos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Estilo personalizado para usar la fuente Inter */
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
         }
-        /* Peque帽o efecto de scroll suave para la navegaci贸n interna */
-        html {
-            scroll-behavior: smooth;
+        .card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-        /* Animaci贸n para el indicador de carga */
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #ef4444;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
+        .header-bg {
+            background: linear-gradient(90deg, #1e3a8a 0%, #1d4ed8 100%);
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        /* Estilos para el Visor Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 1000px;
+            height: 90%;
+            display: flex;
+            flex-direction: column;
+        }
+        .pdf-canvas-container {
+            flex-grow: 1;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            padding-top: 10px; /* Pequeño espacio para que el canvas no toque el borde */
+        }
+        #pdf-viewer {
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            max-width: 100%; 
+            height: auto;
         }
     </style>
+    <!-- Carga del visor de PDF (CDN de Mozilla) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js"></script>
 </head>
-<body class="bg-gray-50 text-gray-800">
+<body class="min-h-screen flex flex-col">
 
-    <!-- Barra de Navegaci贸n --><header class="bg-white shadow-md sticky top-0 z-50">
-        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <h1 class="text-2xl font-bold text-red-600">Domifrenos</h1>
-            <div class="hidden md:flex space-x-6 items-center">
-                <a href="#inicio" class="text-gray-600 hover:text-red-600 transition duration-300">Inicio</a>
-                <a href="#frenos" class="text-gray-600 hover:text-red-600 transition duration-300">Frenos</a>
-                <a href="#cloches" class="text-gray-600 hover:text-red-600 transition duration-300">Cloches</a>
-                <a href="#diagnostico-ia" class="text-gray-600 hover:text-red-600 transition duration-300">Asistente IA</a>
-                <a href="#contacto" class="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition duration-300">Contacto</a>
-            </div>
-            <!-- Men煤 para m贸viles --><div class="md:hidden">
-                 <a href="#contacto" class="bg-red-600 text-white px-4 py-2 rounded-full hover:bg-red-700 transition duration-300">Contacto</a>
-            </div>
-        </nav>
+    <!-- Encabezado (Header) -->
+    <header class="header-bg text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-3xl font-bold tracking-tight">Matematik</h1>
+            <button id="login-button" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-300">
+                Iniciar Sesión
+            </button>
+        </div>
     </header>
 
-    <!-- Contenido Principal --><main>
-
-        <!-- Secci贸n de Inicio (Hero) --><section id="inicio" class="bg-gray-900 text-white text-center py-20 md:py-32">
-            <div class="container mx-auto px-6">
-                <h2 class="text-4xl md:text-5xl font-bold mb-4">Tu Seguridad es Nuestra Prioridad</h2>
-                <p class="text-lg md:text-xl mb-8 text-gray-300 max-w-3xl mx-auto">En Domifrenos, somos especialistas en el mantenimiento y reparaci贸n de sistemas de frenos y cloches. Viaja tranquilo, nosotros nos encargamos del resto.</p>
-                <a href="#contacto" class="bg-red-600 text-white px-8 py-3 rounded-full font-bold hover:bg-red-700 transition duration-300 text-lg">Agenda tu Revisi贸n</a>
-            </div>
+    <!-- Contenido Principal -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <section class="text-center mb-16">
+            <h2 class="text-5xl font-extrabold text-gray-900 mb-4">
+                El futuro del aprendizaje de matemáticas.
+            </h2>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                Accede a nuestra colección completa de 27 recursos esenciales.
+            </p>
         </section>
 
-        <!-- Secci贸n de Asesor铆a sobre Frenos --><section id="frenos" class="py-16 md:py-24 bg-white">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-12">
-                    <h3 class="text-3xl md:text-4xl font-bold text-gray-900">Todo sobre el Sistema de Frenos</h3>
-                    <p class="text-gray-600 mt-2 max-w-2xl mx-auto">El sistema de frenos es el componente de seguridad m谩s importante de tu veh铆culo. Aprende a identificar cu谩ndo necesita atenci贸n.</p>
-                </div>
-                <div class="grid md:grid-cols-2 gap-12 items-center">
-                    <div>
-                        <!-- IMAGEN FIABLE DE DISCO DE FRENO (Placeholder estilizado en ROJO) -->
-                        <img src="https://placehold.co/600x400/991B1B/FFFFFF?text=DISCO+DE+FRENO%0A(Componente+Principal)" alt="Representaci贸n de un disco de freno" class="rounded-lg shadow-lg w-full h-full object-cover">
-                    </div>
-                    <div>
-                        <h4 class="text-2xl font-semibold mb-4">Se帽ales de que tus frenos necesitan una revisi贸n:</h4>
-                        <ul class="space-y-4">
-                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">1</span><div><h5 class="font-bold">Ruidos agudos o chirridos</h5><p class="text-gray-600">Si escuchas un chillido al frenar, podr铆a ser el indicador de desgaste de las pastillas de freno.</p></div></li>
-                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">2</span><div><h5 class="font-bold">Vibraciones en el pedal o volante</h5><p class="text-gray-600">Vibraciones al frenar pueden indicar que los discos de freno (rotores) est谩n deformados.</p></div></li>
-                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">3</span><div><h5 class="font-bold">Pedal de freno blando o esponjoso</h5><p class="text-gray-600">Si sientes que el pedal se va hasta el fondo, podr铆a haber aire o una fuga en el sistema hidr谩ulico.</p></div></li>
-                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">4</span><div><h5 class="font-bold">El veh铆culo se va hacia un lado</h5><p class="text-gray-600">Si al frenar el auto tiende a irse hacia la izquierda o derecha, puede ser un problema en las pinzas (c谩lipers) o las mangueras.</p></div></li>
-                        </ul>
-                        <p class="mt-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-r-lg"><span class="font-bold">Nuestro consejo:</span> No ignores estas se帽ales. Una revisi贸n a tiempo puede evitar reparaciones costosas y, lo m谩s importante, garantizar tu seguridad en el camino.</p>
-                    </div>
-                </div>
+        <!-- Sección de Recursos de Estudio (Lista dinámica) -->
+        <section class="bg-white p-8 rounded-xl card mb-16">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6">Biblioteca Completa de 27 PDFs</h2>
+            
+            <!-- Aquí se insertarán los 27 elementos dinámicamente -->
+            <div id="content-list" class="space-y-3">
+                <!-- Se rellena con JavaScript -->
+                <div class="text-center text-gray-500 py-10" id="loading-message">Cargando lista de recursos...</div>
             </div>
-        </section>
-
-        <!-- Secci贸n de Asesor铆a sobre Cloches --><section id="cloches" class="py-16 md:py-24 bg-gray-50">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-12">
-                    <h3 class="text-3xl md:text-4xl font-bold text-gray-900">Sistema de Embrague (Clutch)</h3>
-                    <p class="text-gray-600 mt-2 max-w-2xl mx-auto">El sistema de embrague es crucial para una transmisi贸n de potencia suave. Nos especializamos en su mantenimiento y reparaci贸n para asegurar un funcionamiento 贸ptimo.</p>
-                </div>
-                <div class="grid md:grid-cols-2 gap-12 items-center">
-                    <div class="order-2 md:order-1">
-                        <h4 class="text-2xl font-semibold mb-4">S铆ntomas de Falla en el Sistema:</h4>
-                        <ul class="space-y-4">
-                            <!-- ANTES #2, AHORA #1 -->
-                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">1</span><div><h5 class="font-bold">Dificultad para meter las marchas</h5><p class="text-gray-600">Si los cambios no entran suavemente, es un signo cl谩sico de que el sistema hidr谩ulico no est谩 desembragando correctamente.</p></div></li>
-                            <!-- ANTES #3, AHORA #2 -->
-                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">2</span><div><h5 class="font-bold">Pedal del clutch duro, muy suave o se queda pegado</h5><p class="text-gray-600">Cambios en la sensaci贸n del pedal casi siempre apuntan a fallas en la bomba o el bomb铆n del clutch.</p></div></li>
-                            <!-- ANTES #4, AHORA #3 -->
-                            <li class="flex items-start"><span class="bg-red-100 text-red-600 rounded-full h-8 w-8 text-center flex items-center justify-center font-bold mr-4 shrink-0">3</span><div><h5 class="font-bold">Fugas de l铆quido</h5><p class="text-gray-600">Si notas l铆quido de frenos cerca del pedal o debajo de la transmisi贸n, es una se帽al de fuga en el sistema hidr谩ulico.</p></div></li>
-                        </ul>
-                        
-                        <div class="mt-6 bg-gray-200 border-l-4 border-gray-500 p-4 rounded-r-lg">
-                            <h5 class="font-bold text-gray-800">Servicio Adicional: Prensa Hidr谩ulica</h5>
-                            <p class="text-gray-600">Contamos con servicio de prensa para el montaje y desmontaje de rodamientos, bujes y otros componentes que requieren alta precisi贸n y fuerza.</p>
-                        </div>
-
-                        <p class="mt-6 bg-blue-100 border-l-4 border-blue-500 text-blue-800 p-4 rounded-r-lg"><span class="font-bold">Nuestro consejo:</span> No ignores un pedal que cambia de sensaci贸n. Una revisi贸n a tiempo del sistema hidr谩ulico puede evitar que te quedes varado y previene da帽os mayores en la transmisi贸n.</p>
-                    </div>
-                    <div class="order-1 md:order-2">
-                        <!-- IMAGEN FIABLE DE SISTEMA DE EMBRAGUE (Placeholder estilizado en AZUL) -->
-                        <img src="https://placehold.co/600x400/1D4ED8/FFFFFF?text=SISTEMA+DE+EMBRAGUE%0A(Kit+Hidr%C3%A1ulico)" alt="Representaci贸n del sistema de embrague hidr谩ulico" class="rounded-lg shadow-lg w-full h-full object-cover">
-                    </div>
-                </div>
-            </div>
-        </section>
-        
-        <!-- ======================================================= --><!-- ===== NUEVA SECCI脫N: ASISTENTE DE DIAGN脫STICO IA ===== --><!-- ======================================================= --><section id="diagnostico-ia" class="py-16 md:py-24 bg-white">
-            <div class="container mx-auto px-6">
-                <div class="text-center mb-12 max-w-3xl mx-auto">
-                    <h3 class="text-3xl md:text-4xl font-bold text-gray-900">Asistente de Diagn贸stico IA</h3>
-                    <p class="text-gray-600 mt-2">驴Tu auto hace un ruido extra帽o? 驴Sientes algo raro al frenar? Describe el problema y nuestra IA te dar谩 una orientaci贸n sobre las posibles causas.</p>
-                </div>
-
-                <div class="max-w-2xl mx-auto bg-gray-50 p-8 rounded-lg shadow-md border border-gray-200">
-                    <div class="mb-4">
-                        <label for="problem-description" class="block text-lg font-semibold mb-2 text-gray-700">Describe el problema de tu veh铆culo:</label>
-                        <textarea id="problem-description" rows="5" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition" placeholder="Ej: 'Cuando freno a baja velocidad, se escucha un chillido agudo que viene de las ruedas delanteras.'"></textarea>
-                    </div>
-                    
-                    <button id="analyze-button" class="w-full bg-red-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-red-700 transition duration-300 text-lg flex items-center justify-center gap-2">
-                        <span>鉁�</span> Analizar Problema con IA
-                    </button>
-
-                    <div id="ai-result" class="mt-8 p-6 bg-white rounded-lg border border-gray-200 min-h-[100px]">
-                        <p class="text-gray-500 text-center">El an谩lisis de nuestro asistente IA aparecer谩 aqu铆...</p>
-                    </div>
-
-                    <p class="text-xs text-gray-500 mt-4 text-center">
-                        <strong>Importante:</strong> Este asistente es una herramienta de orientaci贸n y no reemplaza el diagn贸stico de un mec谩nico profesional. Te recomendamos agendar una cita en Domifrenos para una revisi贸n completa.
-                    </p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Secci贸n de Contacto --><section id="contacto" class="py-16 md:py-24 bg-gray-900 text-white">
-            <div class="container mx-auto px-6 text-center">
-                 <h3 class="text-3xl md:text-4xl font-bold">Cont谩ctanos y Agenda tu Cita</h3>
-                 <p class="text-gray-300 mt-2 mb-10 max-w-2xl mx-auto">驴Tienes dudas o identificaste alguna de las se帽ales anteriores? 隆No esperes m谩s! Estamos aqu铆 para ayudarte.</p>
-                 <div class="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-12">
-                    <div class="bg-gray-800 p-8 rounded-lg shadow-lg text-left max-w-sm">
-                        <h4 class="text-2xl font-bold mb-4">Informaci贸n de Contacto</h4>
-                        <div class="space-y-4 text-gray-300">
-                            <p class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg><span>carrera 4 #40d-212 Apto 01</span></p>
-                            <p class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg><span>3148140930</span></p>
-                            <p class="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg><span>jonatanpestana009@gmail.com</span></p>
-                        </div>
-                    </div>
-                    <div class="w-full md:w-1/2 lg:w-1/3">
-                       <div class="bg-gray-700 rounded-lg shadow-lg overflow-hidden">
-                           <!-- IFRAME ACTUALIZADO CON LA DIRECCI脫N ESPEC脥FICA -->
-                           <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3920.895315183307!2d-75.3941566851996!3d9.30472299330896!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8e591451b6210f63%3A0xb338e55e5f30e620!2sCarrera%204%20%2340d-212%20Apto%2001%2C%20Sincelejo%2C%20Sucre!5e0!3m2!1ses!2sco!4v1716900403616!5m2!1ses!2sco" width="100%" height="300" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-                       </div>
-                    </div>
-                 </div>
-            </div>
+            
         </section>
 
     </main>
 
-    <!-- Pie de P谩gina --><footer class="bg-gray-800 text-white py-6">
-        <div class="container mx-auto px-6 text-center text-gray-400">
-            <p>&copy; 2025 Domifrenos. Todos los derechos reservados.</p>
-            <p class="text-sm mt-1">Dise帽ado para la seguridad y confianza de nuestros clientes.</p>
+    <!-- Modal para el Visor de PDF -->
+    <div id="pdf-modal" class="modal">
+        <div class="modal-content">
+            <div class="flex flex-col sm:flex-row justify-between items-center pb-4 border-b border-gray-200 space-y-2 sm:space-y-0">
+                <h3 id="pdf-title" class="text-xl font-bold text-gray-800 text-center sm:text-left">Cargando Documento...</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700 text-2xl font-bold transition duration-150">&times;</button>
+            </div>
+            <!-- Contenedor del PDF (Canvas) -->
+            <div class="pdf-canvas-container">
+                <canvas id="pdf-viewer"></canvas>
+            </div>
+            <!-- Controles del Visor y Descarga -->
+            <div class="mt-4 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                <!-- Sección de Navegación -->
+                <div class="flex space-x-4">
+                    <button id="prev-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300">Anterior</button>
+                    <span id="page-info" class="font-medium text-gray-700 self-center">Página 0 de 0</span>
+                    <button id="next-page" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition duration-300">Siguiente</button>
+                </div>
+                <!-- Sección de Descarga -->
+                <a id="download-link" href="#" target="_blank" download class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 11.586V4a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Descargar PDF
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pie de Página (Footer) -->
+    <footer class="bg-gray-800 text-white mt-12 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>&copy; 2024 Matematik. Todos los derechos reservados.</p>
         </div>
     </footer>
 
     <script>
-        const analyzeButton = document.getElementById('analyze-button');
-        const problemDescription = document.getElementById('problem-description');
-        const aiResultContainer = document.getElementById('ai-result');
+        // =========================================================================
+        // 1. LISTA COMPLETA DE 27 RECURSOS (EXTRAÍDOS DE LA IMAGEN)
+        // La ruta 'pdfs/' se añade automáticamente a cada archivo, excepto a prueba.pdf.
+        // =========================================================================
+        const rawPdfNames = [
+            "CIUDAD GEOMÉTRICA.pdf",
+            "DON PORCENTAJE.pdf",
+            "ECUACIÓN PERFECTA DEL AMOR.pdf",
+            "EL CERO Y SU TRISTEZA.pdf",
+            "EL CUBO SOÑADOR.pdf",
+            "EL ENREDO DE LOS CEROS.pdf",
+            "EL ORIGEN DEL ÁLGEBRA.pdf",
+            "EL TALLER DE NACHO.pdf",
+            "EL SEÑOR MIXTO SE CONVIERTE EN UNA FRACCIÓN.pdf",
+            "EL UNO ROJO Y EL NUEVE MALO.pdf",
+            "EL VIAJE DE LA AVENTURAN GEOMÉTRICA.pdf",
+            "LA AVENTURA MATEMÁTICA DE CENICIENTA.pdf",
+            "La carrera de las funciones.pdf",
+            "La fiesta del Seno y del Coseno.pdf",
+            "LA GRAN IMPORTANCIA DE LOS NÚMEROS EN EL FÚTBOL.pdf",
+            "LA LOCURA DEL UNO.pdf",
+            "LA REBELIÓN DE LOS NÚMEROS.pdf",
+            "LAS MATEMÁTICAS DEL AMOR.pdf",
+            "LAS MATEMÁTICAS UN MUNDO POR CONOCER.pdf",
+            "Los tres ceritos y la incógnita feroz.pdf",
+            "PARTE ENTERA.pdf",
+            "POEMA MATEMATICO.pdf",
+            "QUIÉN ES EL MEJOR.pdf",
+            "RAIZ CUADRADA.pdf",
+            "UNA GRAN FAMILIA NUMÉRICA.pdf",
+            "VECTOR NULO.pdf",
+            "Ecuaciones del corazón.pdf"
+        ];
 
-        // Funci贸n para realizar la llamada a la API con reintentos y "exponential backoff"
-        async function fetchWithBackoff(url, options, retries = 4, delay = 1000) {
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (response.ok) {
-                        return response;
-                    }
-                    // No reintentar en errores del cliente (ej. 400 Bad Request), ya que el problema es la solicitud.
-                    if (response.status >= 400 && response.status < 500) {
-                        throw new Error(`Error en la API: ${response.statusText}`);
-                    }
-                    // Reintentar solo en errores del servidor (5xx) o de red.
-                    // No se loguea en la consola del usuario para no causar alarma.
-                } catch (error) {
-                    // Error de red, se reintentar谩.
+        // Mapeo la lista de nombres de archivo a objetos con título y ruta
+        const pdfList = rawPdfNames.map(name => {
+            // Elimina la extensión .pdf y convierte a minúsculas para el título amigable
+            const baseTitle = name.replace(/\.pdf$/i, '').toUpperCase();
+            
+            // Asume que todos están en la carpeta 'pdfs/', excepto el archivo de prueba si lo tienes aparte.
+            const filename = 'pdfs/' + name; 
+
+            return { title: baseTitle, filename: filename };
+        });
+
+        // Opcional: Si quieres mantener el archivo de prueba original en la raíz, puedes añadirlo aquí
+        // pdfList.unshift({ title: "DOCUMENTO DE PRUEBA (RAÍZ)", filename: "prueba.pdf" });
+
+
+        // =========================================================================
+        // 2. LÓGICA DEL VISOR DE PDF
+        // =========================================================================
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.js';
+
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        const scale = 2.5; // Resolución alta para nitidez (lo que soluciona el problema de "borroso")
+        const canvas = document.getElementById('pdf-viewer');
+        const ctx = canvas.getContext('2d');
+        const pdfModal = document.getElementById('pdf-modal');
+        const pdfTitle = document.getElementById('pdf-title');
+        const pageInfo = document.getElementById('page-info');
+        const downloadLink = document.getElementById('download-link');
+
+        function renderPage(num) {
+            pageRendering = true;
+
+            pdfDoc.getPage(num).then(function(page) {
+                // Ajuste de escala para mejor visualización manteniendo alta calidad
+                const containerWidth = document.querySelector('.modal-content').clientWidth - 40; 
+                let adjustedScale = scale;
+                
+                const initialViewport = page.getViewport({ scale: 1 });
+                if (initialViewport.width * scale > containerWidth) {
+                    adjustedScale = containerWidth / initialViewport.width;
                 }
-                // Esperar antes del siguiente reintento, duplicando el tiempo de espera cada vez.
-                await new Promise(resolve => setTimeout(resolve, delay));
-                delay *= 2;
-            }
-            throw new Error('No se pudo conectar con el servidor de IA despu茅s de varios intentos.');
+                
+                const viewport = page.getViewport({ scale: adjustedScale });
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                const renderContext = { canvasContext: ctx, viewport: viewport };
+                const renderTask = page.render(renderContext);
+
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        queueRenderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+
+                pageInfo.textContent = 'Página ' + num + ' de ' + pdfDoc.numPages;
+            });
         }
 
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
 
-        analyzeButton.addEventListener('click', async () => {
-            const userQuery = problemDescription.value.trim();
+        document.getElementById('prev-page').addEventListener('click', function() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        });
 
-            if (!userQuery) {
-                aiResultContainer.innerHTML = '<p class="text-yellow-600 text-center">Por favor, describe el problema de tu veh铆culo antes de analizar.</p>';
+        document.getElementById('next-page').addEventListener('click', function() {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        });
+
+        function openPdfViewer(url, title, filename) {
+            pdfTitle.textContent = "Cargando: " + title + "...";
+            pageInfo.textContent = 'Página 0 de 0';
+            pdfModal.style.display = 'flex'; 
+            
+            // Configura el enlace de descarga (usando la URL relativa)
+            downloadLink.href = url;
+            downloadLink.setAttribute('download', filename.split('/').pop()); // Usar solo el nombre del archivo
+
+            pdfjsLib.getDocument(url).promise.then(function(pdfDocument) {
+                pdfDoc = pdfDocument;
+                pageNum = 1; 
+                pdfTitle.textContent = title; 
+                renderPage(pageNum);
+            }).catch(function(error) {
+                pdfTitle.textContent = "Error al cargar el PDF. Verifica que el archivo '" + filename + "' exista en la ruta correcta (¿está en la carpeta pdfs/?)";
+                console.error("Error al cargar el PDF: ", error);
+            });
+        }
+
+        document.getElementById('close-modal').addEventListener('click', function() {
+            pdfModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', function(event) {
+            if (event.target === pdfModal) {
+                pdfModal.style.display = 'none';
+            }
+        });
+
+        // =========================================================================
+        // 3. GENERACIÓN DINÁMICA DE LA LISTA
+        // =========================================================================
+        function generatePdfList() {
+            const listContainer = document.getElementById('content-list');
+            listContainer.innerHTML = ''; // Limpia el mensaje de carga
+
+            if (pdfList.length === 0) {
+                listContainer.innerHTML = '<p class="text-gray-500 text-center">No hay recursos disponibles.</p>';
                 return;
             }
 
-            // Mostrar indicador de carga y deshabilitar el bot贸n
-            aiResultContainer.innerHTML = '<div class="flex justify-center items-center"><div class="loader"></div></div>';
-            analyzeButton.disabled = true;
-            analyzeButton.classList.add('opacity-50', 'cursor-not-allowed');
-
-            const systemPrompt = "Act煤a como un mec谩nico experto de Domifrenos, especializado en sistemas de frenos y embragues. Tu tono debe ser profesional, tranquilizador y f谩cil de entender para alguien sin conocimientos t茅cnicos. No des diagn贸sticos definitivos, en su lugar, explica las posibles causas del problema descrito en una lista con vi帽etas y enfatiza siempre al final, en un p谩rrafo separado y en negrita, la importancia de una revisi贸n profesional en nuestro taller para garantizar la seguridad.";
-
-            try {
-                // Configuraci贸n de la llamada a la API de Gemini
-                const apiKey = ""; // La clave se gestiona en el entorno de ejecuci贸n
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            pdfList.forEach((pdf, index) => {
+                const element = document.createElement('div');
+                element.className = 'p-4 bg-blue-50 border border-blue-200 rounded-lg flex justify-between items-center cursor-pointer hover:bg-blue-100 transition duration-150 view-pdf';
                 
-                const payload = {
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    systemInstruction: {
-                        parts: [{ text: systemPrompt }]
-                    },
-                };
-                
-                const response = await fetchWithBackoff(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                element.innerHTML = `
+                    <span class="font-medium text-blue-800">${index + 1}. ${pdf.title}</span>
+                    <span class="text-sm text-blue-600 font-semibold py-1 px-3 bg-blue-200 rounded-full">Abrir PDF</span>
+                `;
+
+                // Añadir evento de click
+                element.addEventListener('click', () => {
+                    openPdfViewer(pdf.filename, pdf.title, pdf.filename);
                 });
 
-                const result = await response.json();
-                const candidate = result.candidates?.[0];
+                listContainer.appendChild(element);
+            });
+        }
 
-                if (candidate && candidate.content?.parts?.[0]?.text) {
-                    // Formatear el texto de Markdown a HTML para una mejor presentaci贸n
-                    const rawText = candidate.content.parts[0].text;
-                    let formattedText = rawText
-                        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Negrita
-                        .replace(/\n\s*\*\s/g, '\n- ') // Unificar vi帽etas a '-'
-                        .replace(/(\n- .*)+/g, (list) => { // Envolver bloques de listas en <ul>
-                           const items = list.trim().split('\n- ').slice(1).map(item => `<li class="mb-2 ml-4 list-disc">${item.trim()}</li>`).join('');
-                           return `<ul>${items}</ul>`;
-                        })
-                        .replace(/\n/g, '<br>'); // Saltos de l铆nea
+        document.addEventListener('DOMContentLoaded', () => {
+            generatePdfList(); // Genera la lista al cargar la página
 
-                    aiResultContainer.innerHTML = `<h4 class="font-bold text-lg mb-3 text-gray-800">An谩lisis Preliminar:</h4><div class="text-gray-700 space-y-3">${formattedText}</div>`;
-                } else {
-                    throw new Error("No se recibi贸 una respuesta v谩lida de la IA.");
-                }
-
-            } catch (error) {
-                console.error("Error al contactar la IA de Gemini:", error);
-                aiResultContainer.innerHTML = '<p class="text-red-600 text-center">Lo sentimos, no pudimos procesar tu solicitud en este momento. Por favor, intenta de nuevo m谩s tarde o cont谩ctanos directamente.</p>';
-            } finally {
-                // Habilitar el bot贸n nuevamente
-                analyzeButton.disabled = false;
-                analyzeButton.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
+            document.getElementById('login-button').addEventListener('click', () => {
+                // Mensaje de alerta para funcionalidad estática
+                const customAlert = document.createElement('div');
+                customAlert.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center';
+                customAlert.innerHTML = `
+                    <div class="bg-white p-6 rounded-lg shadow-xl text-center max-w-sm">
+                        <p class="text-lg font-semibold mb-4">Funcionalidad Estática</p>
+                        <p class="text-gray-600 mb-6">El botón "Iniciar Sesión" es solo un marcador de posición en esta versión. ¡Clic en Iniciar Sesión!</p>
+                        <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300" onclick="this.closest('.fixed').remove()">Cerrar</button>
+                    </div>
+                `;
+                document.body.appendChild(customAlert);
+            });
         });
     </script>
 </body>
-    </html>
+</html>
