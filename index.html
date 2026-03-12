@@ -3,161 +3,220 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biblioteca Matemática - Cuentos Educativos</title>
+    <title>Biblioteca Matemática - Cuentos Digitales</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Configuración para el motor de PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
-        // Configuración de Tailwind para usar un color primario más vibrante
         tailwind.config = {
+            darkMode: 'class', 
             theme: {
                 extend: {
-                    colors: {
-                        primary: '#10b981', // Emerald 500
-                        'primary-dark': '#059669', // Emerald 600
-                        'secondary-bg': '#e0f2f1', // Teal 50
+                    fontFamily: {
+                        'space': ['Space Grotesk', 'sans-serif'],
+                        'outfit': ['Outfit', 'sans-serif'],
                     },
-                    boxShadow: {
-                        '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.3)',
+                    colors: {
+                        darkbg: '#09090b', // Negro profundo elegante
+                        darkcard: '#18181b', // Gris muy oscuro para tarjetas
                     }
                 }
             }
         }
     </script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
         body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0fdfa; /* Un fondo muy claro */
+            font-family: 'Outfit', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
-        .container-main {
-            min-height: 100vh;
+
+        /* Patrón de puntos sutil para el fondo (Estilo Matemático/Tech) */
+        .bg-pattern {
+            background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+            background-size: 24px 24px;
         }
-        .pdf-title-bar {
-            background-color: #10b981; /* Primary color */
-            color: white;
-            position: sticky;
-            top: 0;
-            z-index: 50; /* Mayor z-index para la barra de control */
+        .dark .bg-pattern {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
         }
-        .book-button {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            transform-origin: center;
+
+        h1, h2, h3, .font-space {
+            font-family: 'Space Grotesk', sans-serif;
         }
-        .book-button:hover {
-            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.3), 0 4px 6px -2px rgba(16, 185, 129, 0.1);
-            transform: translateY(-4px) scale(1.02);
-            border-color: #059669;
+
+        /* Scrollbar elegante */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
-        /* Estilos para el canvas del PDF para que ocupe el espacio sin desbordar */
-        #pdfCanvas {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 0 auto;
-        }
-        /* Animación de carga */
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .loader {
-            border-top-color: #10b981;
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+        /* Loader Minimalista */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(14, 165, 233, 0.2);
+            border-top-color: #0ea5e9;
+            border-radius: 50%;
             animation: spin 1s linear infinite;
         }
+        .dark .spinner {
+            border: 3px solid rgba(34, 211, 238, 0.1);
+            border-top-color: #22d3ee;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-slate-50 text-slate-900 dark:bg-darkbg dark:text-slate-100 min-h-screen flex flex-col relative overflow-x-hidden antialiased bg-pattern">
+
+    <!-- BOTÓN DE TEMA CLARO/OSCURO (Minimalista) -->
+    <button id="themeToggle" class="fixed top-5 right-5 z-[110] p-3 rounded-full bg-white dark:bg-darkcard border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md dark:hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:scale-105 transition-all duration-300 group cursor-pointer" title="Cambiar Tema">
+        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500 hidden dark:block group-hover:rotate-45 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500 block dark:hidden group-hover:-rotate-12 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+    </button>
 
     <!-- Modal para el visor de PDF -->
-    <div id="pdfModal" class="fixed inset-0 bg-gray-900 bg-opacity-95 hidden z-[100] overflow-y-auto">
-        <div class="flex flex-col h-full w-full mx-auto">
+    <div id="pdfModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm hidden z-[100] overflow-y-auto transition-opacity duration-300">
+        <div class="flex flex-col h-full w-full mx-auto relative max-w-7xl shadow-2xl bg-slate-50 dark:bg-darkbg">
+            
             <!-- Barra de Título y Cierre del PDF -->
-            <div id="pdfTitleBar" class="pdf-title-bar p-3 sm:p-4 flex justify-between items-center shadow-2xl">
-                <div class="text-md sm:text-xl font-bold truncate max-w-[calc(100%-120px)] sm:max-w-full" id="modalTitle"></div>
+            <div class="p-4 sm:p-5 flex justify-between items-center sticky top-0 z-50 bg-white/90 dark:bg-darkcard/90 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
+                <div class="flex items-center gap-3 max-w-[60%] sm:max-w-[70%]">
+                    <div class="w-1.5 h-6 bg-blue-500 dark:bg-cyan-400 rounded-full hidden sm:block"></div>
+                    <div class="text-sm sm:text-lg font-space font-semibold truncate text-slate-800 dark:text-slate-200" id="modalTitle"></div>
+                </div>
+                
                 <div class="flex items-center space-x-2 sm:space-x-4">
-                    <span id="pageInfo" class="text-xs sm:text-sm font-medium hidden sm:block">Página <span id="currentPage">0</span> de <span id="totalPages">0</span></span>
+                    <span id="pageInfo" class="text-xs sm:text-sm font-space text-slate-500 dark:text-slate-400 hidden sm:block tracking-widest uppercase">
+                        Pág <span id="currentPage" class="text-slate-900 dark:text-white font-bold">0</span> / <span id="totalPages">0</span>
+                    </span>
                     
-                    <button id="downloadPdf" class="px-3 py-1 sm:py-1.5 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full text-xs sm:text-sm font-medium transition duration-150 flex items-center space-x-1" title="Descargar PDF">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L10 11.586l1.293-1.293a1 1 0 111.414 1.414l-2 2a1 1 0 01-1.414 0l-2-2a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v7a1 1 0 11-2 0V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    <button id="downloadPdf" class="px-4 py-2 bg-blue-50 dark:bg-white/5 hover:bg-blue-100 dark:hover:bg-white/10 border border-blue-100 dark:border-white/10 rounded-lg text-blue-600 dark:text-slate-300 text-xs sm:text-sm font-space transition-colors flex items-center space-x-2" title="Descargar Archivo">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
                         <span class="hidden sm:inline">Descargar</span>
                     </button>
-                    <button id="closeModal" class="p-2 bg-red-500 hover:bg-red-600 rounded-full transition duration-150 shadow-md" title="Cerrar Visor">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    
+                    <button id="closeModal" class="p-2 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 rounded-lg transition-colors" title="Cerrar">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
             </div>
             
-            <!-- Controles de Paginación para Móviles (Sticky en la parte inferior) -->
-            <div class="sm:hidden fixed bottom-0 left-0 right-0 bg-white shadow-2xl p-3 flex justify-center items-center space-x-6 z-50 border-t border-gray-200">
-                <button id="prevPageMobile" class="p-3 bg-gray-200 hover:bg-gray-300 rounded-full transition duration-150 opacity-100 disabled:opacity-50" title="Página Anterior">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
+            <!-- Controles Mobile -->
+            <div class="sm:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-darkcard p-3 flex justify-between items-center px-6 z-50 border-t border-slate-200 dark:border-white/10">
+                <button id="prevPageMobile" class="p-2 bg-slate-100 dark:bg-white/5 rounded-lg text-slate-700 dark:text-slate-300 active:bg-slate-200 dark:active:bg-white/10 disabled:opacity-30 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                 </button>
-                <span class="text-lg font-bold text-gray-700">Pág <span id="currentPageMobile">0</span>/<span id="totalPagesMobile">0</span></span>
-                <button id="nextPageMobile" class="p-3 bg-gray-200 hover:bg-gray-300 rounded-full transition duration-150 opacity-100 disabled:opacity-50" title="Página Siguiente">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-700" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                    </svg>
+                <span class="font-space text-slate-500 dark:text-slate-400 tracking-widest text-xs uppercase">
+                    <span id="currentPageMobile" class="text-slate-900 dark:text-white text-base font-bold">0</span> / <span id="totalPagesMobile">0</span>
+                </span>
+                <button id="nextPageMobile" class="p-2 bg-slate-100 dark:bg-white/5 rounded-lg text-slate-700 dark:text-slate-300 active:bg-slate-200 dark:active:bg-white/10 disabled:opacity-30 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                 </button>
             </div>
             
-            <!-- Controles de Paginación para Desktop (flotante) -->
-            <div class="hidden sm:flex fixed top-1/2 left-0 right-0 justify-between transform -translate-y-1/2 z-50 pointer-events-none px-6">
-                <button id="prevPageDesktop" class="p-4 bg-gray-800 bg-opacity-50 hover:bg-opacity-70 rounded-full transition duration-150 shadow-lg pointer-events-auto disabled:opacity-30" title="Página Anterior">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
+            <!-- Controles Desktop -->
+            <div class="hidden sm:flex fixed top-1/2 left-0 right-0 justify-between transform -translate-y-1/2 z-50 pointer-events-none px-6 xl:px-12">
+                <button id="prevPageDesktop" class="p-3 bg-white/90 dark:bg-darkcard/90 border border-slate-200 dark:border-white/10 backdrop-blur-sm rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 transition-all pointer-events-auto disabled:opacity-0 shadow-sm hover:shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                 </button>
-                <button id="nextPageDesktop" class="p-4 bg-gray-800 bg-opacity-50 hover:bg-opacity-70 rounded-full transition duration-150 shadow-lg pointer-events-auto disabled:opacity-30" title="Página Siguiente">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                    </svg>
+                <button id="nextPageDesktop" class="p-3 bg-white/90 dark:bg-darkcard/90 border border-slate-200 dark:border-white/10 backdrop-blur-sm rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 transition-all pointer-events-auto disabled:opacity-0 shadow-sm hover:shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                 </button>
             </div>
             
-            <!-- Contenedor del Visor de PDF y Mensajes de Error/Carga -->
-            <div class="flex-grow p-4 overflow-y-auto relative flex justify-center items-center bg-gray-200 sm:pb-4 pb-20"> 
-                <canvas id="pdfCanvas" class="shadow-2xl rounded-lg max-w-full"></canvas>
+            <!-- Contenedor PDF -->
+            <div class="flex-grow p-4 sm:p-8 overflow-y-auto relative flex justify-center items-start sm:pb-8 pb-24 bg-slate-100/50 dark:bg-black/20"> 
+                <canvas id="pdfCanvas" class="max-w-full relative z-10 shadow-lg dark:shadow-2xl dark:shadow-black/50 rounded-sm"></canvas>
                 
-                <!-- Mensajes de Estado (Carga, Error, etc.) -->
-                <div id="statusMessage" class="absolute inset-0 bg-white bg-opacity-90 flex flex-col justify-center items-center p-8 hidden">
-                    <!-- Icono de carga (Spinner) -->
-                    <div id="loaderSpinner" class="loader w-12 h-12 border-4 border-gray-200 rounded-full hidden"></div>
-                    <p id="statusText" class="text-xl text-gray-700 font-semibold text-center mt-4"></p>
-                    <button id="retryButton" class="mt-4 px-6 py-3 bg-primary text-white rounded-xl shadow-lg hover:bg-primary-dark transition duration-150 hidden">Reintentar</button>
+                <div id="statusMessage" class="absolute inset-0 flex flex-col justify-center items-center p-8 hidden z-20">
+                    <div id="loaderSpinner" class="spinner hidden"></div>
+                    <p id="statusText" class="font-space text-lg text-slate-600 dark:text-slate-400 mt-6 tracking-widest uppercase text-center"></p>
+                    <button id="retryButton" class="mt-6 px-6 py-2 border border-slate-300 dark:border-white/20 rounded-lg font-space hover:bg-slate-200 dark:hover:bg-white/10 transition-colors hidden">
+                        Reintentar
+                    </button>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Contenido Principal de la Biblioteca -->
-    <div class="container-main mx-auto p-4 sm:p-10">
-        <header class="text-center mb-10 p-6 bg-white rounded-3xl shadow-xl">
-            <h1 class="text-4xl sm:text-6xl font-extrabold text-primary tracking-tight leading-tight">
-                <span class="block text-gray-800 text-3xl sm:text-4xl">Biblioteca de</span> Cuentos Matemáticos
-            </h1>
-            <p class="text-lg sm:text-xl text-gray-600 mt-4">Aprende matemáticas a través de historias fascinantes.</p>
+    <!-- Contenido Principal -->
+    <div class="container mx-auto p-4 sm:p-8 flex-grow relative z-10 max-w-7xl">
+        
+        <!-- HEADER LIMPIO Y ELEGANTE -->
+        <header class="text-center mb-16 pt-12">
+            <div class="inline-block relative w-full max-w-3xl">
+                <div class="px-6 py-10 sm:py-14 rounded-3xl bg-white dark:bg-darkcard border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none">
+                    <h1 class="text-4xl sm:text-5xl md:text-6xl font-space font-bold tracking-tight leading-tight">
+                        <span class="block text-slate-500 dark:text-slate-400 text-lg sm:text-xl mb-3 font-medium tracking-[0.2em] uppercase">Biblioteca de</span>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500 dark:from-cyan-400 dark:to-emerald-400">
+                            Cuentos Matemáticos
+                        </span>
+                    </h1>
+                    <div class="h-1 w-16 bg-gradient-to-r from-blue-500 to-teal-400 dark:from-cyan-500 dark:to-emerald-500 mx-auto mt-6 rounded-full opacity-80"></div>
+                    <p class="mt-6 text-slate-600 dark:text-slate-400 font-light text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
+                        Aprende matemáticas a través de historias fascinantes. Selecciona un documento para iniciar la lectura interactiva.
+                    </p>
+                </div>
+            </div>
         </header>
 
-        <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
-            <!-- La lista de documentos se generará aquí -->
+        <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="grid-container">
+            <!-- Cards generadas por JS -->
         </main>
 
-        <footer class="text-center mt-16 pt-6 border-t border-gray-300 text-gray-500 text-sm">
-            <p class="text-base">&copy; 2025 Proyecto Educativo | Diseñado para la lectura en cualquier dispositivo.</p>
-        </footer>
     </div>
 
+    <footer class="text-center py-8 mt-auto border-t border-slate-200 dark:border-white/5 bg-white/50 dark:bg-darkbg/50 backdrop-blur-sm relative z-10">
+        <p class="text-slate-500 dark:text-slate-500 font-space text-xs tracking-widest uppercase flex items-center justify-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-teal-500 dark:bg-emerald-500"></span>
+            Sistema Educativo &copy; 2026 | Interfaz Premium
+        </p>
+    </footer>
+
     <script>
-        // Declaración de variables de la UI (omitiendo por brevedad)
+        // --- LÓGICA DE TEMA CLARO / OSCURO ---
+        const htmlElement = document.documentElement;
+        const themeToggleBtn = document.getElementById('themeToggle');
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                htmlElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                htmlElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            applyTheme('dark');
+        } else {
+            applyTheme('light');
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            if (htmlElement.classList.contains('dark')) {
+                applyTheme('light');
+            } else {
+                applyTheme('dark');
+            }
+        });
+
+        // --- LÓGICA DE LA BIBLIOTECA PDF ---
         const pdfModal = document.getElementById('pdfModal');
         const pdfCanvas = document.getElementById('pdfCanvas');
         const modalTitle = document.getElementById('modalTitle');
@@ -173,71 +232,81 @@
         const totalPagesSpan = document.getElementById('totalPages');
         const currentPageMobile = document.getElementById('currentPageMobile');
         const totalPagesMobile = document.getElementById('totalPagesMobile');
-        const pageInfo = document.getElementById('pageInfo');
         const downloadPdfButton = document.getElementById('downloadPdf');
-        const mainContent = document.querySelector('main');
+        const gridContainer = document.getElementById('grid-container');
         
         let pdfDoc = null;
         let pageNum = 1;
         let pdfUrl = '';
-        let currentTitle = ''; // Para usar en la descarga
+        let currentTitle = '';
 
-        // *** LISTA DE DOCUMENTOS CON LAS RUTAS CORREGIDAS ***
-        const documents = [
-            { title: "CIUDAD GEOMÉTRICA", file: "pdfs/CIUDAD GEOMÉTRICA.pdf" },
-            { title: "DON PORCENTAJE", file: "pdfs/DON PORCENTAJE.pdf" },
-            { title: "ECUACIÓN PERFECTA DEL AMOR", file: "pdfs/ECUACIÓN PERFECTA DEL AMOR.pdf" },
-            { title: "EL CERO Y SU TRISTEZA", file: "pdfs/EL CERO Y SU TRISTEZA.pdf" },
-            { title: "EL CUBO SOÑADOR", file: "pdfs/EL CUBO SOÑADOR.pdf" },
-            { title: "EL ENREDO DE LOS CEROS", file: "pdfs/EL ENREDO DE LOS CEROS.pdf" },
-            { title: "EL ORIGEN DEL ÁLGEBRA", file: "pdfs/EL ORIGEN DEL ÁLGEBRA.pdf" },
-            { title: "EL SEÑOR MIXTO SE CONVIERTE EN UNA FRACCIÓN", file: "pdfs/EL SEÑOR MIXTO SE CONVIERTE EN UNA FRACCIÓN.pdf" },
-            { title: "EL TALLER DE NACHO", file: "pdfs/EL TALLER DE NACHO.pdf" },
-            { title: "EL UNO ROJO Y EL NUEVE MALO", file: "pdfs/EL UNO ROJO Y EL NUEVE MALO.pdf" },
-            // RUTA FINAL CORREGIDA (Un solo punto antes de .pdf y mayúsculas respetadas):
-            { title: "EL VIAJE DE LA AVENTURA GEOMÉTRICA", file: "pdfs/EL VIAJE DE LA AVENTURA GEOMÉTRICA.pdf" },
-            { title: "LA AVENTURA MATEMÁTICA DE CENICIENTA", file: "pdfs/LA AVENTURA MATEMÁTICA DE CENICIENTA.pdf" },
-            { title: "LA CARRERA DE LAS FUNCIONES", file: "pdfs/LA CARRERA DE LAS FUNCIONES.pdf" },
-            { title: "LA FIESTA DEL SENO Y DEL COSENO", file: "pdfs/LA FIESTA DEL SENO Y DEL COSENO.pdf" },
-            { title: "LA GRAN IMPORTANCIA DE LOS NÚMEROS EN EL FÚTBOL", file: "pdfs/LA GRAN IMPORTANCIA DE LOS NÚMEROS EN EL FÚTBOL.pdf" },
-            { title: "LA LOCURA DEL UNO", file: "pdfs/LA LOCURA DEL UNO.pdf" },
-            { title: "LA REBELIÓN DE LOS NÚMEROS", file: "pdfs/LA REBELIÓN DE LOS NÚMEROS.pdf" },
-            { title: "LAS MATEMÁTICAS DEL AMOR", file: "pdfs/LAS MATEMÁTICAS DEL AMOR.pdf" },
-            { title: "LAS MATEMÁTICAS UN MUNDO POR CONOCER", file: "pdfs/LAS MATEMÁTICAS UN MUNDO POR CONOCER.pdf" },
-            { title: "Los tres ceritos y la incógnita feroz", file: "pdfs/Los tres ceritos y la incógnita feroz.pdf" },
-            { title: "PARTE ENTERA", file: "pdfs/PARTE ENTERA.pdf" },
-            { title: "POEMA MATEMATICO", file: "pdfs/POEMA MATEMATICO.pdf" },
-            { title: "QUIÉN ES EL MEJOR", file: "pdfs/QUIÉN ES EL MEJOR.pdf" },
-            { title: "RAÍZ CUADRADA", file: "pdfs/RAÍZ CUADRADA.pdf" },
-            { title: "UNA GRAN FAMILIA NUMÉRICA", file: "pdfs/UNA GRAN FAMILIA NUMÉRICA.pdf" },
-            { title: "VECTOR NULO", file: "pdfs/VECTOR NULO.pdf" },
-            { title: "Ecuaciones del corazón", file: "pdfs/Ecuaciones del corazón.pdf" },
+        const rawFiles = [
+            "DON PORCENTAJE.pdf",
+            "ECUACIÓN PERFECTA DEL AMOR.pdf",
+            "Ecuaciones del corazón.pdf",
+            "EL CERO Y SU TRISTEZA.pdf",
+            "El círculo que perdió su centro.pdf",
+            "EL CUBO SOÑADOR.pdf",
+            "EL ENREDO DE LOS CEROS.pdf",
+            "El mundo detrás del cuaderno.pdf",
+            "EL NACIMIENTO DE LAS IDEAS MATEMÁTICAS.pdf",
+            "El número que quería brillar.pdf",
+            "EL ORIGEN DEL ÁLGEBRA.pdf",
+            "El secreto del número 7.pdf",
+            "EL SEÑOR MIXTO SE CONVIERTE EN UNA FRACCIÓN.pdf",
+            "EL TALLER DE NACHO.pdf",
+            "EL UNO ROJO Y EL NUEVE MALO.pdf",
+            "El viaje de la aventuran geométrica.pdf",
+            "LA AVENTURA MATEMÁTICA DE CENICIENTA.pdf",
+            "La carrera de las funciones.pdf",
+            "La fiesta del Seno y del Coseno.pdf",
+            "LA GRAN IMPORTANCIA DE LOS NÚMEROS EN EL FUTBOL.pdf",
+            "LA LOCURA DEL UNO.pdf",
+            "LA REBELIÓN DE LOS NÚMEROS.pdf",
+            "LAS MATEMÁTICAS DEL AMOR.pdf",
+            "Los tres ceritos y la incógnita feroz.pdf",
+            "CIUDAD GEOMÉTRICA.pdf",
+            "LAS MATEMÁTICAS UN MUNDO POR CONOCER.pdf",
+            "PARTE ENTERA.pdf",
+            "POEMA MATEMATICO.pdf",
+            "QUIÉN ES EL MEJOR.pdf",
+            "RAÍZ CUADRADA.pdf",
+            "UNA GRAN FAMILIA NUMÉRICA.pdf",
+            "VECTOR NULO.pdf"
         ];
 
+        const documents = rawFiles.map(filename => ({
+            title: filename.replace('.pdf', ''), 
+            file: `pdfs/${filename}` 
+        }));
 
-        /**
-         * Funciones para la UI
-         */
         function renderDocumentButtons() {
-            mainContent.innerHTML = ''; // Limpiar contenido anterior
-            documents.forEach(doc => {
+            gridContainer.innerHTML = ''; 
+            documents.forEach((doc, index) => {
                 const button = document.createElement('button');
-                button.className = 'book-button bg-white p-6 rounded-2xl shadow-lg border-b-4 border-primary/20 text-left transition duration-300 ease-in-out focus:outline-none focus:ring-4 focus:ring-primary/50';
+                // Estilos de la tarjeta bien limpios y modernos
+                button.className = `group flex flex-col h-full bg-white dark:bg-darkcard border border-slate-200 dark:border-white/5 rounded-2xl p-6 sm:p-7 text-left cursor-pointer transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] dark:hover:bg-[#1f1f22] dark:hover:border-white/10`;
+
                 button.innerHTML = `
-                    <div class="flex items-center space-x-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <path d="M14 2v6h6"></path>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 12 7 14 9"></polyline>
-                        </svg>
-                        <span class="text-xl font-bold text-gray-800">${doc.title}</span>
+                    <div class="flex items-start space-x-4 mb-4">
+                        <div class="p-3 bg-blue-50 dark:bg-white/5 rounded-xl text-blue-500 dark:text-cyan-400 group-hover:scale-110 group-hover:bg-blue-100 dark:group-hover:bg-cyan-500/10 transition-transform duration-300">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                        </div>
+                        <h2 class="text-base sm:text-lg font-space font-semibold text-slate-800 dark:text-slate-200 leading-snug group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
+                            ${doc.title}
+                        </h2>
                     </div>
-                    <p class="mt-3 text-sm text-gray-500 line-clamp-2">Cuento educativo centrado en temas matemáticos como ${doc.title.split(' ')[0].toLowerCase()} y la geometría.</p>
+                    <div class="mt-auto pt-4 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+                        <span class="text-[10px] font-space tracking-[0.15em] text-teal-600 dark:text-emerald-500 uppercase font-bold">Documento .PDF</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400 dark:text-slate-500 transform -rotate-45 group-hover:text-blue-500 dark:group-hover:text-cyan-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </div>
                 `;
-                button.onclick = () => openPdfViewer(doc.file, doc.title);
-                mainContent.appendChild(button);
+                button.onclick = () => openPdfViewer(encodeURI(doc.file), doc.title);
+                gridContainer.appendChild(button);
             });
         }
 
@@ -246,19 +315,15 @@
             retryButton.classList.toggle('hidden', !showRetry);
             loaderSpinner.classList.toggle('hidden', !showLoader);
             statusMessage.classList.remove('hidden');
-            pdfCanvas.classList.add('hidden');
-            pageInfo.classList.add('hidden');
+            pdfCanvas.classList.add('opacity-0'); 
         }
 
         function hideStatus() {
             statusMessage.classList.add('hidden');
-            pdfCanvas.classList.remove('hidden');
-            pageInfo.classList.remove('hidden');
+            pdfCanvas.classList.remove('opacity-0');
+            pdfCanvas.classList.add('transition-opacity', 'duration-500', 'opacity-100');
         }
 
-        /**
-         * Funciones del Visor de PDF
-         */
         async function openPdfViewer(url, title) {
             pdfUrl = url;
             currentTitle = title;
@@ -268,16 +333,13 @@
             pageNum = 1;
             pdfDoc = null;
             
-            // CORRECCIÓN DE NAVEGACIÓN (Botón Atrás en Móvil)
             window.history.pushState({ pdfOpen: true }, '', '#viewer'); 
 
             await renderPdf(url);
 
-            // Actualizar el enlace de descarga
             downloadPdfButton.onclick = () => {
                 const link = document.createElement('a');
                 link.href = pdfUrl;
-                // Usamos el título del documento para el nombre del archivo descargado
                 link.download = currentTitle + '.pdf'; 
                 document.body.appendChild(link);
                 link.click();
@@ -291,7 +353,12 @@
             pdfModal.classList.add('hidden');
             document.body.classList.remove('overflow-hidden');
             pdfDoc = null; 
-            pdfCanvas.getContext('2d').clearRect(0, 0, pdfCanvas.width, pdfCanvas.height); 
+            const ctx = pdfCanvas.getContext('2d');
+            if(ctx) ctx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height); 
+            
+            if (location.hash === '#viewer') {
+                window.history.back();
+            }
         }
 
         async function renderPdf(url) {
@@ -313,7 +380,7 @@
                 if (scale * viewport.height > modalContainer.clientHeight * 0.9) {
                      scale = (modalContainer.clientHeight * 0.9) / viewport.height;
                 }
-                scale = Math.max(0.7, scale); 
+                scale = Math.max(0.6, scale); 
 
                 const finalViewport = page.getViewport({ scale: scale });
 
@@ -334,9 +401,8 @@
                 updatePagingButtons();
 
             } catch (error) {
-                console.error('Error al cargar o renderizar el PDF:', error);
-                // Mensaje de error útil sobre la ruta del archivo.
-                showStatus(`Error de carga (404). Verifica que el archivo "${currentTitle}.pdf" esté EXACTAMENTE en la carpeta 'pdfs/' y no tenga espacios, puntos o caracteres extra en su nombre.`, true, false);
+                console.error('Error del sistema:', error);
+                showStatus(`Archivo no encontrado (${currentTitle}.pdf)`, true, false);
             }
         }
 
@@ -344,17 +410,10 @@
             const isFirst = pageNum <= 1;
             const isLast = pdfDoc && pageNum >= pdfDoc.numPages;
 
-            // Desktop
             prevPageDesktop.disabled = isFirst;
             nextPageDesktop.disabled = isLast;
-            prevPageDesktop.classList.toggle('opacity-30', isFirst);
-            nextPageDesktop.classList.toggle('opacity-30', isLast);
-            
-            // Mobile
             prevPageMobile.disabled = isFirst;
             nextPageMobile.disabled = isLast;
-            prevPageMobile.classList.toggle('opacity-50', isFirst);
-            nextPageMobile.classList.toggle('opacity-50', isLast);
         }
 
         function goToPage(delta) {
@@ -367,9 +426,7 @@
             }
         }
 
-        /**
-         * Inicialización y Eventos
-         */
+        // Inicialización y Eventos
         window.onload = renderDocumentButtons;
 
         document.getElementById('closeModal').onclick = closeModal;
@@ -381,32 +438,19 @@
 
         document.addEventListener('keydown', (e) => {
             if (!pdfModal.classList.contains('hidden')) {
-                if (e.key === 'Escape') {
-                    closeModal();
-                } else if (e.key === 'ArrowLeft') {
-                    goToPage(-1);
-                } else if (e.key === 'ArrowRight') {
-                    goToPage(1);
-                }
+                if (e.key === 'Escape') closeModal();
+                else if (e.key === 'ArrowLeft') goToPage(-1);
+                else if (e.key === 'ArrowRight') goToPage(1);
             }
         });
         
         window.addEventListener('resize', () => {
-            if (pdfDoc && !pdfModal.classList.contains('hidden')) {
-                renderPdf(pdfUrl);
-            }
+            if (pdfDoc && !pdfModal.classList.contains('hidden')) renderPdf(pdfUrl);
         });
         
-        // SOLUCIÓN AL PROBLEMA DEL BOTÓN ATRÁS EN MÓVIL
         window.addEventListener('popstate', (event) => {
-            // Solo actuar si el modal está abierto
-            if (pdfModal.classList.contains('hidden') === false) {
-                // Si el evento es un retroceso (y no es nuestro estado original de #viewer), cerramos el modal.
-                if (location.hash !== '#viewer') {
-                    closeModal();
-                    // Reemplazamos el estado para evitar que un segundo "Atrás" salga de la aplicación.
-                    window.history.replaceState(null, '', location.pathname); 
-                }
+            if (!pdfModal.classList.contains('hidden')) {
+                closeModal();
             }
         });
 
