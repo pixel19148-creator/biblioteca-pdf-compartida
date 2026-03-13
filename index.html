@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biblioteca Matemática - Cuentos Digitales</title>
+    <title>Las matemáticas también cuentan</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script>
@@ -16,6 +16,7 @@
                     fontFamily: {
                         'space': ['Space Grotesk', 'sans-serif'],
                         'outfit': ['Outfit', 'sans-serif'],
+                        'hand': ['Patrick Hand', 'cursive'], // Fuente para simular escritura a mano
                     },
                     colors: {
                         darkbg: '#09090b', // Negro profundo elegante
@@ -25,14 +26,15 @@
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Fuentes de Google: Se añade Patrick Hand para la letra cursiva/infantil -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@400;600;700&family=Patrick+Hand&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Outfit', sans-serif;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Patrón de puntos sutil para el fondo (Estilo Matemático/Tech) */
+        /* Patrón de puntos sutil para el fondo */
         .bg-pattern {
             background-image: radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px);
             background-size: 24px 24px;
@@ -41,15 +43,11 @@
             background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
         }
 
-        h1, h2, h3, .font-space {
-            font-family: 'Space Grotesk', sans-serif;
-        }
+        h1, h2, h3, .font-space { font-family: 'Space Grotesk', sans-serif; }
+        .font-hand { font-family: 'Patrick Hand', cursive; }
 
         /* Scrollbar elegante */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
@@ -58,11 +56,9 @@
 
         /* Loader Minimalista */
         .spinner {
-            width: 40px;
-            height: 40px;
+            width: 40px; height: 40px;
             border: 3px solid rgba(14, 165, 233, 0.2);
-            border-top-color: #0ea5e9;
-            border-radius: 50%;
+            border-top-color: #0ea5e9; border-radius: 50%;
             animation: spin 1s linear infinite;
         }
         .dark .spinner {
@@ -70,11 +66,21 @@
             border-top-color: #22d3ee;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Animación para el texto curvo del logo */
+        #curveText { transform-origin: center; }
+
+        /* Estilo para los lápices del borde */
+        .pencil-border {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><text y="20" font-size="20">✏️</text></svg>');
+            background-repeat: repeat-y;
+            background-position: right center;
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 dark:bg-darkbg dark:text-slate-100 min-h-screen flex flex-col relative overflow-x-hidden antialiased bg-pattern">
+<body class="bg-slate-50 text-slate-900 dark:bg-darkbg dark:text-slate-100 min-h-screen relative overflow-x-hidden antialiased bg-pattern">
 
-    <!-- BOTÓN DE TEMA CLARO/OSCURO (Minimalista) -->
+    <!-- BOTÓN DE TEMA CLARO/OSCURO -->
     <button id="themeToggle" class="fixed top-5 right-5 z-[110] p-3 rounded-full bg-white dark:bg-darkcard border border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md dark:hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] hover:scale-105 transition-all duration-300 group cursor-pointer" title="Cambiar Tema">
         <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500 hidden dark:block group-hover:rotate-45 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -84,110 +90,215 @@
         </svg>
     </button>
 
-    <!-- Modal para el visor de PDF -->
-    <div id="pdfModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm hidden z-[100] overflow-y-auto transition-opacity duration-300">
-        <div class="flex flex-col h-full w-full mx-auto relative max-w-7xl shadow-2xl bg-slate-50 dark:bg-darkbg">
-            
-            <!-- Barra de Título y Cierre del PDF -->
-            <div class="p-4 sm:p-5 flex justify-between items-center sticky top-0 z-50 bg-white/90 dark:bg-darkcard/90 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
-                <div class="flex items-center gap-3 max-w-[60%] sm:max-w-[70%]">
-                    <div class="w-1.5 h-6 bg-blue-500 dark:bg-cyan-400 rounded-full hidden sm:block"></div>
-                    <div class="text-sm sm:text-lg font-space font-semibold truncate text-slate-800 dark:text-slate-200" id="modalTitle"></div>
-                </div>
-                
-                <div class="flex items-center space-x-2 sm:space-x-4">
-                    <span id="pageInfo" class="text-xs sm:text-sm font-space text-slate-500 dark:text-slate-400 hidden sm:block tracking-widest uppercase">
-                        Pág <span id="currentPage" class="text-slate-900 dark:text-white font-bold">0</span> / <span id="totalPages">0</span>
-                    </span>
-                    
-                    <button id="downloadPdf" class="px-4 py-2 bg-blue-50 dark:bg-white/5 hover:bg-blue-100 dark:hover:bg-white/10 border border-blue-100 dark:border-white/10 rounded-lg text-blue-600 dark:text-slate-300 text-xs sm:text-sm font-space transition-colors flex items-center space-x-2" title="Descargar Archivo">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        <span class="hidden sm:inline">Descargar</span>
-                    </button>
-                    
-                    <button id="closeModal" class="p-2 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 rounded-lg transition-colors" title="Cerrar">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Controles Mobile -->
-            <div class="sm:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-darkcard p-3 flex justify-between items-center px-6 z-50 border-t border-slate-200 dark:border-white/10">
-                <button id="prevPageMobile" class="p-2 bg-slate-100 dark:bg-white/5 rounded-lg text-slate-700 dark:text-slate-300 active:bg-slate-200 dark:active:bg-white/10 disabled:opacity-30 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <span class="font-space text-slate-500 dark:text-slate-400 tracking-widest text-xs uppercase">
-                    <span id="currentPageMobile" class="text-slate-900 dark:text-white text-base font-bold">0</span> / <span id="totalPagesMobile">0</span>
-                </span>
-                <button id="nextPageMobile" class="p-2 bg-slate-100 dark:bg-white/5 rounded-lg text-slate-700 dark:text-slate-300 active:bg-slate-200 dark:active:bg-white/10 disabled:opacity-30 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                </button>
-            </div>
-            
-            <!-- Controles Desktop -->
-            <div class="hidden sm:flex fixed top-1/2 left-0 right-0 justify-between transform -translate-y-1/2 z-50 pointer-events-none px-6 xl:px-12">
-                <button id="prevPageDesktop" class="p-3 bg-white/90 dark:bg-darkcard/90 border border-slate-200 dark:border-white/10 backdrop-blur-sm rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 transition-all pointer-events-auto disabled:opacity-0 shadow-sm hover:shadow-md">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
-                </button>
-                <button id="nextPageDesktop" class="p-3 bg-white/90 dark:bg-darkcard/90 border border-slate-200 dark:border-white/10 backdrop-blur-sm rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 transition-all pointer-events-auto disabled:opacity-0 shadow-sm hover:shadow-md">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                </button>
-            </div>
-            
-            <!-- Contenedor PDF -->
-            <div class="flex-grow p-4 sm:p-8 overflow-y-auto relative flex justify-center items-start sm:pb-8 pb-24 bg-slate-100/50 dark:bg-black/20"> 
-                <canvas id="pdfCanvas" class="max-w-full relative z-10 shadow-lg dark:shadow-2xl dark:shadow-black/50 rounded-sm"></canvas>
-                
-                <div id="statusMessage" class="absolute inset-0 flex flex-col justify-center items-center p-8 hidden z-20">
-                    <div id="loaderSpinner" class="spinner hidden"></div>
-                    <p id="statusText" class="font-space text-lg text-slate-600 dark:text-slate-400 mt-6 tracking-widest uppercase text-center"></p>
-                    <button id="retryButton" class="mt-6 px-6 py-2 border border-slate-300 dark:border-white/20 rounded-lg font-space hover:bg-slate-200 dark:hover:bg-white/10 transition-colors hidden">
-                        Reintentar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Contenido Principal -->
-    <div class="container mx-auto p-4 sm:p-8 flex-grow relative z-10 max-w-7xl">
+    <!-- ========================================== -->
+    <!-- VISTA 1: PORTADA TIPO LOGIN (EL MURAL)       -->
+    <!-- ========================================== -->
+    <div id="coverView" class="min-h-screen flex flex-col items-center justify-center p-4 sm:p-8 relative z-50 transition-all duration-500 ease-in-out">
         
-        <!-- HEADER LIMPIO Y ELEGANTE -->
-        <header class="text-center mb-16 pt-12">
-            <div class="inline-block relative w-full max-w-3xl">
-                <div class="px-6 py-10 sm:py-14 rounded-3xl bg-white dark:bg-darkcard border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none">
-                    <h1 class="text-4xl sm:text-5xl md:text-6xl font-space font-bold tracking-tight leading-tight">
-                        <span class="block text-slate-500 dark:text-slate-400 text-lg sm:text-xl mb-3 font-medium tracking-[0.2em] uppercase">Biblioteca de</span>
-                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500 dark:from-cyan-400 dark:to-emerald-400">
-                            Cuentos Matemáticos
-                        </span>
-                    </h1>
-                    <div class="h-1 w-16 bg-gradient-to-r from-blue-500 to-teal-400 dark:from-cyan-500 dark:to-emerald-500 mx-auto mt-6 rounded-full opacity-80"></div>
-                    <p class="mt-6 text-slate-600 dark:text-slate-400 font-light text-base sm:text-lg max-w-xl mx-auto leading-relaxed">
-                        Aprende matemáticas a través de historias fascinantes. Selecciona un documento para iniciar la lectura interactiva.
+        <!-- Tarjeta del Mural -->
+        <div class="w-full max-w-5xl bg-white dark:bg-[#121215] border-2 border-slate-200 dark:border-white/10 rounded-[30px] sm:rounded-[40px] shadow-2xl overflow-hidden relative flex flex-col items-center justify-center py-16 px-4 sm:px-16 aspect-auto sm:aspect-video pencil-border">
+            
+            <!-- Sombras decorativas en los bordes para simular el papel -->
+            <div class="absolute inset-0 shadow-[inset_0_0_50px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_0_50px_rgba(255,255,255,0.02)] pointer-events-none"></div>
+
+            <!-- Decoración Top Left (Símbolos Matemáticos) -->
+            <div class="absolute top-6 left-6 sm:top-10 sm:left-10 flex flex-wrap w-24 sm:w-32 gap-2 text-4xl sm:text-6xl font-bold opacity-80 select-none">
+                <span class="text-pink-500 drop-shadow-md transform -rotate-12">+</span>
+                <span class="text-emerald-500 drop-shadow-md transform rotate-12">−</span>
+                <span class="text-blue-500 drop-shadow-md transform rotate-6">×</span>
+                <span class="text-amber-500 drop-shadow-md transform -rotate-6">÷</span>
+            </div>
+
+            <!-- Decoración Top Right (Números) -->
+            <div class="absolute top-6 right-10 sm:top-10 sm:right-16 text-3xl sm:text-5xl font-space font-bold opacity-90 select-none text-right">
+                <div class="text-blue-500 transform rotate-12 inline-block">9</div>
+                <div class="text-amber-500 transform -rotate-12 inline-block ml-1">3</div>
+                <div class="text-blue-600 transform rotate-6 inline-block ml-2">=</div>
+                <div class="text-emerald-500 transform rotate-12 inline-block ml-2">6</div>
+                <div class="text-red-500 transform -rotate-6 inline-block ml-2">5</div><br>
+                <div class="text-pink-500 transform -rotate-12 inline-block mt-2">+</div>
+                <div class="text-emerald-600 transform rotate-12 inline-block ml-2">5</div>
+                <div class="text-red-600 transform rotate-24 inline-block ml-2">1</div>
+                <div class="text-orange-500 transform -rotate-12 inline-block ml-4 mt-4 block">8</div>
+                <div class="text-cyan-500 transform rotate-6 inline-block ml-2 block">1</div>
+            </div>
+
+            <!-- Decoración Bottom Left (Niños Leyendo) -->
+            <div class="absolute bottom-20 left-4 sm:bottom-10 sm:left-10 text-5xl sm:text-7xl select-none drop-shadow-lg">
+                🧒🏽👧🏼📖
+            </div>
+
+            <!-- Decoración Bottom Right (Herramientas matemáticas) -->
+            <div class="absolute bottom-20 right-10 sm:bottom-10 sm:right-16 text-4xl sm:text-6xl select-none drop-shadow-lg flex gap-2">
+                📐🧮📏
+            </div>
+
+            <!-- ELEMENTO CENTRAL: Círculo y Texto Curvo -->
+            <div class="relative w-64 h-64 sm:w-80 sm:h-80 mt-16 sm:mt-12 flex items-center justify-center">
+                
+                <!-- SVG para el texto curvo Institución Educativa... -->
+                <svg viewBox="0 0 400 400" class="absolute w-[150%] h-[150%] top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none drop-shadow-sm">
+                    <!-- Path circular: Empezamos desde más abajo (y=240) y le damos más espacio para que "IN" no se corte -->
+                    <path id="curvePath" d="M 20,240 A 180,180 0 0,1 380,240" fill="transparent" />
+                    <text class="font-space font-bold text-[22px] sm:text-[24px] tracking-widest text-slate-800 dark:text-cyan-400 drop-shadow-sm" fill="currentColor">
+                        <textPath href="#curvePath" startOffset="50%" text-anchor="middle">
+                            INSTITUCIÓN EDUCATIVA RAFAEL NÚÑEZ
+                        </textPath>
+                    </text>
+                </svg>
+
+                <!-- Círculo interior Azul -->
+                <div class="w-48 h-48 sm:w-64 sm:h-64 rounded-full bg-[#87CEEB] dark:bg-[#164e63] shadow-[inset_0_4px_15px_rgba(0,0,0,0.1)] flex flex-col items-center justify-center p-4 text-center z-10">
+                    <h2 class="font-space font-extrabold text-base sm:text-lg text-slate-900 dark:text-white leading-tight drop-shadow-sm">
+                        Las<br>matemáticas<br>también cuentan:
+                    </h2>
+                    <h3 class="font-space font-bold text-sm sm:text-base text-slate-800 dark:text-cyan-200 mt-1 leading-tight">
+                        contando más<br>que números
+                    </h3>
+                    <p class="font-hand text-sm sm:text-base text-slate-900 dark:text-slate-200 mt-2 font-normal antialiased">
+                        Microcentro de<br>matemáticas
                     </p>
                 </div>
             </div>
-        </header>
+        </div>
 
-        <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="grid-container">
-            <!-- Cards generadas por JS -->
-        </main>
-
+        <!-- Botón de ACCESO -->
+        <button onclick="enterLibrary()" class="mt-8 px-10 sm:px-14 py-4 sm:py-5 bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-500 hover:to-teal-400 text-white font-space font-bold text-xl sm:text-2xl rounded-full shadow-[0_10px_20px_rgba(14,165,233,0.3)] hover:shadow-[0_15px_30px_rgba(14,165,233,0.5)] transform hover:-translate-y-2 transition-all duration-300 flex items-center gap-3">
+            ACCEDER A LOS CUENTOS
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-8 sm:w-8 animate-bounce horizontal" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+        </button>
     </div>
 
-    <footer class="text-center py-8 mt-auto border-t border-slate-200 dark:border-white/5 bg-white/50 dark:bg-darkbg/50 backdrop-blur-sm relative z-10">
-        <p class="text-slate-500 dark:text-slate-500 font-space text-xs tracking-widest uppercase flex items-center justify-center gap-2">
-            <span class="w-1.5 h-1.5 rounded-full bg-teal-500 dark:bg-emerald-500"></span>
-            Sistema Educativo &copy; 2026 | Interfaz Premium
-        </p>
-    </footer>
+
+    <!-- ========================================== -->
+    <!-- VISTA 2: LA BIBLIOTECA (OCULTA INICIALMENTE) -->
+    <!-- ========================================== -->
+    <div id="libraryContainer" class="hidden flex-col min-h-screen opacity-0 transition-opacity duration-700">
+        
+        <!-- Modal para el visor de PDF -->
+        <div id="pdfModal" class="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm hidden z-[100] overflow-y-auto transition-opacity duration-300">
+            <div class="flex flex-col h-full w-full mx-auto relative max-w-7xl shadow-2xl bg-slate-50 dark:bg-darkbg">
+                
+                <!-- Barra de Título y Cierre del PDF -->
+                <div class="p-4 sm:p-5 flex justify-between items-center sticky top-0 z-50 bg-white/90 dark:bg-darkcard/90 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
+                    <div class="flex items-center gap-3 max-w-[60%] sm:max-w-[70%]">
+                        <div class="w-1.5 h-6 bg-blue-500 dark:bg-cyan-400 rounded-full hidden sm:block"></div>
+                        <div class="text-sm sm:text-lg font-space font-semibold truncate text-slate-800 dark:text-slate-200" id="modalTitle"></div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2 sm:space-x-4">
+                        <span id="pageInfo" class="text-xs sm:text-sm font-space text-slate-500 dark:text-slate-400 hidden sm:block tracking-widest uppercase">
+                            Pág <span id="currentPage" class="text-slate-900 dark:text-white font-bold">0</span> / <span id="totalPages">0</span>
+                        </span>
+                        
+                        <button id="downloadPdf" class="px-4 py-2 bg-blue-50 dark:bg-white/5 hover:bg-blue-100 dark:hover:bg-white/10 border border-blue-100 dark:border-white/10 rounded-lg text-blue-600 dark:text-slate-300 text-xs sm:text-sm font-space transition-colors flex items-center space-x-2" title="Descargar Archivo">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            <span class="hidden sm:inline">Descargar</span>
+                        </button>
+                        
+                        <button id="closeModal" class="p-2 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-500 dark:text-red-400 rounded-lg transition-colors" title="Cerrar">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Controles Mobile -->
+                <div class="sm:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-darkcard p-3 flex justify-between items-center px-6 z-50 border-t border-slate-200 dark:border-white/10">
+                    <button id="prevPageMobile" class="p-2 bg-slate-100 dark:bg-white/5 rounded-lg text-slate-700 dark:text-slate-300 active:bg-slate-200 dark:active:bg-white/10 disabled:opacity-30 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+                    <span class="font-space text-slate-500 dark:text-slate-400 tracking-widest text-xs uppercase">
+                        <span id="currentPageMobile" class="text-slate-900 dark:text-white text-base font-bold">0</span> / <span id="totalPagesMobile">0</span>
+                    </span>
+                    <button id="nextPageMobile" class="p-2 bg-slate-100 dark:bg-white/5 rounded-lg text-slate-700 dark:text-slate-300 active:bg-slate-200 dark:active:bg-white/10 disabled:opacity-30 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                </div>
+                
+                <!-- Controles Desktop -->
+                <div class="hidden sm:flex fixed top-1/2 left-0 right-0 justify-between transform -translate-y-1/2 z-50 pointer-events-none px-6 xl:px-12">
+                    <button id="prevPageDesktop" class="p-3 bg-white/90 dark:bg-darkcard/90 border border-slate-200 dark:border-white/10 backdrop-blur-sm rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 transition-all pointer-events-auto disabled:opacity-0 shadow-sm hover:shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+                    <button id="nextPageDesktop" class="p-3 bg-white/90 dark:bg-darkcard/90 border border-slate-200 dark:border-white/10 backdrop-blur-sm rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 transition-all pointer-events-auto disabled:opacity-0 shadow-sm hover:shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                </div>
+                
+                <!-- Contenedor PDF -->
+                <div class="flex-grow p-4 sm:p-8 overflow-y-auto relative flex justify-center items-start sm:pb-8 pb-24 bg-slate-100/50 dark:bg-black/20"> 
+                    <canvas id="pdfCanvas" class="max-w-full relative z-10 shadow-lg dark:shadow-2xl dark:shadow-black/50 rounded-sm"></canvas>
+                    
+                    <div id="statusMessage" class="absolute inset-0 flex flex-col justify-center items-center p-8 hidden z-20">
+                        <div id="loaderSpinner" class="spinner hidden"></div>
+                        <p id="statusText" class="font-space text-lg text-slate-600 dark:text-slate-400 mt-6 tracking-widest uppercase text-center"></p>
+                        <button id="retryButton" class="mt-6 px-6 py-2 border border-slate-300 dark:border-white/20 rounded-lg font-space hover:bg-slate-200 dark:hover:bg-white/10 transition-colors hidden">
+                            Reintentar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenido Principal de la Biblioteca -->
+        <div class="container mx-auto p-4 sm:p-8 flex-grow relative z-10 max-w-7xl">
+            
+            <header class="text-center mb-16 pt-6 sm:pt-12">
+                <div class="inline-block relative w-full max-w-4xl">
+                    <div class="px-6 py-10 sm:py-14 rounded-3xl bg-white dark:bg-darkcard border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-200/50 dark:shadow-none">
+                        <h1 class="text-4xl sm:text-5xl md:text-6xl font-space font-bold tracking-tight leading-tight">
+                            <span class="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-teal-500 dark:from-cyan-400 dark:to-emerald-400 pb-2">
+                                Las matemáticas también cuentan
+                            </span>
+                            <span class="block text-slate-500 dark:text-slate-400 text-xl sm:text-2xl mt-4 font-medium tracking-[0.1em]">
+                                contando más que números
+                            </span>
+                        </h1>
+                        <div class="h-1 w-16 bg-gradient-to-r from-blue-500 to-teal-400 dark:from-cyan-500 dark:to-emerald-500 mx-auto mt-8 rounded-full opacity-80"></div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="grid-container">
+                <!-- Cards generadas por JS -->
+            </main>
+
+        </div>
+
+        <footer class="text-center py-8 mt-auto border-t border-slate-200 dark:border-white/5 bg-white/50 dark:bg-darkbg/50 backdrop-blur-sm relative z-10">
+            <p class="text-slate-500 dark:text-slate-500 font-space text-xs tracking-widest uppercase flex items-center justify-center gap-2">
+                <span class="w-1.5 h-1.5 rounded-full bg-teal-500 dark:bg-emerald-500"></span>
+                Las matemáticas también cuentan &copy; 2026 | Interfaz Premium
+            </p>
+        </footer>
+    </div>
 
     <script>
+        // --- ANIMACIÓN DE ENTRADA AL MURAL ---
+        function enterLibrary() {
+            const coverView = document.getElementById('coverView');
+            const libraryContainer = document.getElementById('libraryContainer');
+            
+            // Ocultar portada con animación
+            coverView.style.opacity = '0';
+            coverView.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                coverView.classList.add('hidden');
+                libraryContainer.classList.remove('hidden');
+                
+                // Forzar repintado para que se vea la animación de entrada
+                void libraryContainer.offsetWidth;
+                libraryContainer.classList.remove('opacity-0');
+            }, 500);
+        }
+
         // --- LÓGICA DE TEMA CLARO / OSCURO ---
         const htmlElement = document.documentElement;
         const themeToggleBtn = document.getElementById('themeToggle');
@@ -264,7 +375,15 @@
             "LA LOCURA DEL UNO.pdf",
             "LA REBELIÓN DE LOS NÚMEROS.pdf",
             "LAS MATEMÁTICAS DEL AMOR.pdf",
-            "Los tres ceritos y la incógnita feroz.pdf"
+            "Los tres ceritos y la incógnita feroz.pdf",
+            "CIUDAD GEOMÉTRICA.pdf",
+            "LAS MATEMÁTICAS UN MUNDO POR CONOCER.pdf",
+            "PARTE ENTERA.pdf",
+            "POEMA MATEMATICO.pdf",
+            "QUIÉN ES EL MEJOR.pdf",
+            "RAÍZ CUADRADA.pdf",
+            "UNA GRAN FAMILIA NUMÉRICA.pdf",
+            "VECTOR NULO.pdf"
         ];
 
         const documents = rawFiles.map(filename => ({
@@ -276,7 +395,6 @@
             gridContainer.innerHTML = ''; 
             documents.forEach((doc, index) => {
                 const button = document.createElement('button');
-                // Estilos de la tarjeta bien limpios y modernos
                 button.className = `group flex flex-col h-full bg-white dark:bg-darkcard border border-slate-200 dark:border-white/5 rounded-2xl p-6 sm:p-7 text-left cursor-pointer transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)] dark:hover:bg-[#1f1f22] dark:hover:border-white/10`;
 
                 button.innerHTML = `
